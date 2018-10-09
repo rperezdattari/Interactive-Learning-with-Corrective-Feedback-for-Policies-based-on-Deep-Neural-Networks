@@ -92,17 +92,16 @@ class TrainAE:
 class AE:
     """Class in charge of importing the trained weights of the
     autoencoder with its corresponding graph and evaluate it."""
-    def __init__(self):
+    def __init__(self, ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64'):
         self.graph = tf.Graph()
         self.sess = tf.Session(graph=self.graph)
-        loc = 'graphs/autoencoder/CarRacing-v0/conv_layers_64x64'
         with self.graph.as_default():
-            self.saver = tf.train.import_meta_graph(loc + '.meta', clear_devices=True)
+            self.saver = tf.train.import_meta_graph(ae_loc + '.meta', clear_devices=True)
             self.init = tf.global_variables_initializer()  # initialize the graph
             self.sess = tf.Session()
             self.saver = tf.train.Saver()
             self.sess.run(self.init)
-            self.saver.restore(self.sess, loc)
+            self.saver.restore(self.sess, ae_loc)
             self.code = self.graph.get_operation_by_name('conv_part').outputs[0]
             self.ae_output = self.graph.get_operation_by_name('ae_output').outputs[0]
 

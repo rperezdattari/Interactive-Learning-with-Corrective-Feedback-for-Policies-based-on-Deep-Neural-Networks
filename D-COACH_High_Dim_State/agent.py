@@ -10,7 +10,7 @@ class Agent:
     def __init__(self, train_ae=True, load_policy=False, learning_rate=0.001,
                  dim_a=3, loss_function_type='mean_squared', policy_loc='./racing_car_m2/network',
                  image_size=64, action_upper_limits='1,1', action_lower_limits='-1,-1', e='1',
-                 network='FNN', method='1'):
+                 network='FNN', method='1', ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64'):
         # Initialize variables
         self.observation = None
         self.y_label = None
@@ -46,7 +46,7 @@ class Agent:
                 ae_trainer = TrainAE()
                 ae_trainer.run(train=True, show_performance=True)
 
-            self.AE = AE()
+            self.AE = AE(ae_loc=ae_loc)
             ae_encoder = self.AE.code
             ae_encoder_shape = ae_encoder.get_shape()
             self.low_dim_input = tf.placeholder(tf.float32, [None, ae_encoder_shape[1],

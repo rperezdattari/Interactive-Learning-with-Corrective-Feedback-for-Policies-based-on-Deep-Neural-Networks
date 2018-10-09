@@ -84,6 +84,9 @@ if not use_memory_buffer:
 
 output_reward_results_name = '/' + network + '_results_' + exp_num + '_'
 
+# Create environment
+env = gym.make(environment)
+
 # Create teacher
 if use_teacher:
     teacher = Teacher(network=config_teacher['network'],
@@ -103,6 +106,7 @@ agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
               dim_a=config_graph.getint('dim_a'),
               loss_function_type=config_graph['loss_function_type'],
               policy_loc=config_graph['policy_loc'] + exp_num + '_',
+              ae_loc=config_graph['ae_loc'],
               image_size=config_graph.getint('image_side_length'),
               action_upper_limits=config_graph['action_upper_limits'],
               action_lower_limits=config_graph['action_lower_limits'],

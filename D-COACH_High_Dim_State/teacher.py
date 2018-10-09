@@ -18,11 +18,7 @@ class Teacher:
             self.saver = tf.train.Saver()
             self.sess.run(self.init)
             self.saver.restore(self.sess, loc)
-            if network == 'RNN':
-                self.state = self.sess.run(self.graph.get_operation_by_name('state_in').outputs[0],
-                                           feed_dict={'batch_size:0': 1})
-                self.network_state = self.graph.get_operation_by_name('state_out').outputs[0]
-            self.action_out = self.graph.get_operation_by_name('action').outputs[0]
+            self.action_out = self.graph.get_operation_by_name('base/action').outputs[0]
 
         if method == '1':
             self.AE = AE()
@@ -79,7 +75,7 @@ class Teacher:
         #tau = 0.0000656836
         #feedback_prob = a / (1 + b*np.exp(tau*episode))
 
-        error_prob = self.error_prob # 0.07 -> 20%; 0.035 -> 10%
+        error_prob = self.error_prob  # 0.07 -> 20%; 0.035 -> 10%
 
         h = np.array([0, 0])
         if np.random.uniform() < feedback_prob:
