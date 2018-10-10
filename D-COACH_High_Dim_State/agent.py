@@ -87,7 +87,9 @@ class Agent:
         self.sess.run(self.train_step, feed_dict={'base/input:0': self.observation,
                                                   'base/label:0': self.y_label})
 
-    def batch_update(self, state_batch, ylabel_batch, h_batch=None, periodic_train=False):
+    def batch_update(self, batch):
+        state_batch = [np.array(pair[0]) for pair in batch]
+        ylabel_batch = [np.array(pair[1]) for pair in batch]
 
         self.sess.run(self.train_step, feed_dict={'base/input:0': state_batch,
                                                   'base/label:0': ylabel_batch})
@@ -110,8 +112,8 @@ class Agent:
         observation = observation_to_gray(observation, self.image_size)
         return self.AE.output(observation)
 
-    def last_state_action_pair(self):
-        return self.observation, self.y_label
+    def last_step(self):
+        return [self.observation, self.y_label]
 
     def save_params(self):
         self.saver.save(self.sess, self.policy_loc + '_v7')

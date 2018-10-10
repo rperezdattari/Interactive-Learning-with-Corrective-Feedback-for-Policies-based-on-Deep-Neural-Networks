@@ -74,7 +74,6 @@ max_num_of_episodes = config_exp_setup.getint('max_num_of_episodes')
 max_time_steps_episode = float(config_exp_setup['max_time_steps_episode'])
 history_training_rate = config_buffer.getint('history_training_rate')
 use_memory_buffer = config_buffer.getboolean('use')
-network_has_state = config_buffer.getboolean('network_has_state')
 image_size = config_graph.getint('image_side_length')
 resize_observation = config_graph.getboolean('resize_observation')
 stop_training = config_exp_setup.getboolean('stop_training')
@@ -89,8 +88,7 @@ env = gym.make(environment)
 
 # Create teacher
 if use_teacher:
-    teacher = Teacher(network=config_teacher['network'],
-                      method=config_teacher['method'],
+    teacher = Teacher(method=config_teacher['method'],
                       image_size=config_teacher.getint('image_side_length'),
                       dim_a=config_teacher.getint('dim_a'),
                       action_lower_limits=config_teacher['action_lower_limits'],
@@ -115,12 +113,8 @@ agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
               network=network)
 
 # Create memory buffer
-buffer = MemoryBuffer(buffer_length=config_buffer.getint('length'),
-                      buffer_sampling_size=config_buffer.getint('sampling_size'),
-                      automatic_buffer_train=config_buffer.getboolean('automatic_train'),
-                      dim_a=config_graph.getint('dim_a'),
-                      state_shape=config_buffer['state_shape'],
-                      network_state_shape=config_buffer.getint('network_state_shape'))
+buffer = MemoryBuffer(min_size=config_buffer.getint('max_size'),
+                      max_size=config_buffer.getint('min_size'))
 
 # Create feedback object
 env.render()
@@ -169,8 +163,6 @@ for i_episode in range(max_num_of_episodes):
         observation = cv2.resize(observation, (image_size, image_size))
     if evaluate and r is not None:
         print('reward episode %i:' % i_episode, r)
-    if train:
-        buffer.auto_training(last_episode_received_feedback)
 
     if show_state and i_episode == 0:
         state_plot = FastImagePlot(1, observation_to_gray(observation, image_size), image_size, 'Image State', vmax=0.5)
@@ -215,16 +207,17 @@ for i_episode in range(max_num_of_episodes):
                 h_counter += 1
                 # Add state action-label pair to memory buffer
                 if use_memory_buffer:
-                    state, ylabel = agent.last_state_action_pair()
-                    buffer.append_state_ylabel(state, ylabel)
+                    buffer.add(agent.last_step())
+
                     # Train sampling from buffer
-                    if buffer.is_long_enough():
-                        state_batch, ylabel_batch = buffer.get_batch()
-                        agent.batch_update(state_batch, ylabel_batch)
-            # Train sampling from buffer
-            if t % history_training_rate == 0 and use_memory_buffer and buffer.is_long_enough():
-                state_batch, ylabel_batch = buffer.get_batch()
-                agent.batch_update(state_batch, ylabel_batch, periodic_train=True)
+                    if buffer.initialized():
+                        batch = buffer.sample(batch_size=config_buffer.getint('sampling_size'))
+                        agent.batch_update(batch)
+
+                        # Train every k time steps
+                        if t % history_training_rate == 0:
+                            batch = buffer.sample(batch_size=config_buffer.getint('sampling_size'))
+                            agent.batch_update(batch)
 
         t_counter += 1
 
