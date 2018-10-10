@@ -7,7 +7,7 @@ from models import autoencoder
 
 
 class TrainAE:
-    """Class in charge of training and evaluating the autoencoder."""
+    """Class in charge of training and showing the performance of the autoencoder."""
     def __init__(self):
         self.batch_size = 100  # Number of samples in each batch
         self.epoch_num = 20     # Number of epochs to train the network

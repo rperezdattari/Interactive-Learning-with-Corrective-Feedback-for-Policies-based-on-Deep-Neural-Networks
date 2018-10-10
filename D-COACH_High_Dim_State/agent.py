@@ -14,7 +14,6 @@ class Agent:
         # Initialize variables
         self.observation = None
         self.y_label = None
-        state_init = None
 
         # COACH parameters
         self.e = np.array(str_2_array(e, type_n='float'))
@@ -38,7 +37,6 @@ class Agent:
         self.episode_gradients = 0
         self.g_counter = 0
         self.episode_last_gradients = -1
-        self.stop_ae_training = False
 
         with tf.variable_scope('base'):
             # Initialize graph
@@ -50,7 +48,9 @@ class Agent:
             ae_encoder = self.AE.code
             self.ae_encoder_shape = ae_encoder.get_shape()
             self.low_dim_input = tf.placeholder(tf.float32, [None, self.ae_encoder_shape[1],
-                                                             self.ae_encoder_shape[2], self.ae_encoder_shape[3]], name='input')
+                                                             self.ae_encoder_shape[2],
+                                                             self.ae_encoder_shape[3]],
+                                                name='input')
 
             self.low_dim_input = tf.identity(self.low_dim_input, name='low_dim_input')
 
@@ -116,7 +116,7 @@ class Agent:
         return [self.observation.reshape(self.ae_encoder_shape[1:]), self.y_label.reshape(self.dim_a)]
 
     def save_params(self):
-        self.saver.save(self.sess, self.policy_loc + '_v7')
+        self.saver.save(self.sess, self.policy_loc)
 
     def load_network(self, load=True):
         if load:

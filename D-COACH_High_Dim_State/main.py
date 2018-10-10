@@ -199,7 +199,7 @@ for i_episode in range(max_num_of_episodes):
             # print("Received feedback:", h_counter, "; Total timesteps:", t_counter)
 
         # Update weights
-        if train and not stop_training:
+        if train:
             if np.any(h):  # if any element is not 0
                 agent.update(h, observation)
                 if not use_teacher:
