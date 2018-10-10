@@ -113,8 +113,8 @@ agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
               network=network)
 
 # Create memory buffer
-buffer = MemoryBuffer(min_size=config_buffer.getint('max_size'),
-                      max_size=config_buffer.getint('min_size'))
+buffer = MemoryBuffer(min_size=config_buffer.getint('min_size'),
+                      max_size=config_buffer.getint('max_size'))
 
 # Create feedback object
 env.render()

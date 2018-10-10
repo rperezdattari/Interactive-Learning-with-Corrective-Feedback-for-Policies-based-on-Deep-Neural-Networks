@@ -48,9 +48,9 @@ class Agent:
 
             self.AE = AE(ae_loc=ae_loc)
             ae_encoder = self.AE.code
-            ae_encoder_shape = ae_encoder.get_shape()
-            self.low_dim_input = tf.placeholder(tf.float32, [None, ae_encoder_shape[1],
-                                                             ae_encoder_shape[2], ae_encoder_shape[3]], name='input')
+            self.ae_encoder_shape = ae_encoder.get_shape()
+            self.low_dim_input = tf.placeholder(tf.float32, [None, self.ae_encoder_shape[1],
+                                                             self.ae_encoder_shape[2], self.ae_encoder_shape[3]], name='input')
 
             self.low_dim_input = tf.identity(self.low_dim_input, name='low_dim_input')
 
@@ -113,7 +113,7 @@ class Agent:
         return self.AE.output(observation)
 
     def last_step(self):
-        return [self.observation, self.y_label]
+        return [self.observation.reshape(self.ae_encoder_shape[1:]), self.y_label.reshape(self.dim_a)]
 
     def save_params(self):
         self.saver.save(self.sess, self.policy_loc + '_v7')
