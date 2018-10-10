@@ -18,7 +18,7 @@ class Teacher:
             self.saver = tf.train.Saver()
             self.sess.run(self.init)
             self.saver.restore(self.sess, loc)
-            self.action_out = self.graph.get_operation_by_name('base/action').outputs[0]
+            self.action_out = self.graph.get_operation_by_name('base/action/Tanh').outputs[0]
 
         if method == '1':
             self.AE = AE()
@@ -40,22 +40,10 @@ class Teacher:
         time.sleep(3)
 
     def action(self, observation):
-        observation = observation_to_gray(observation, self.image_size)
-        if self.method == '1':
-            observation = self.AE.conv_representation(observation)
-        else:
-            observation = observation
+        observation_gray = observation_to_gray(observation, self.image_size)
+        observation = self.AE.conv_representation(observation_gray)
 
-        if self.network == 'FNN':
-            action = self.sess.run(self.action_out, feed_dict={'input:0': observation})
-        else:
-            action = self.sess.run(self.action_out, feed_dict={'input:0': observation,
-                                                               'batch_size:0': 1,
-                                                               'state_in:0': self.state})
-
-            self.state = self.sess.run(self.network_state, feed_dict={'input:0': observation,
-                                                                      'batch_size:0': 1,
-                                                                      'state_in:0': self.state})
+        action = self.sess.run(self.action_out, feed_dict={'base/input:0': observation})
 
         out_action = []
         for i in range(self.dim_a):
@@ -69,11 +57,6 @@ class Teacher:
         diff = action - agent_output
 
         feedback_prob = self.teacher_parameters[0]*np.exp(-self.teacher_parameters[1]*episode)
-
-        #a = 0.952915
-        #b = 0.0631431
-        #tau = 0.0000656836
-        #feedback_prob = a / (1 + b*np.exp(tau*episode))
 
         error_prob = self.error_prob  # 0.07 -> 20%; 0.035 -> 10%
 
@@ -94,12 +77,7 @@ class Teacher:
         return h
 
     def new_episode(self, i_episode):
-        if i_episode > 40:
-            self.thr0 += 0.00  #0.03
-            self.thr1 += 0.00  #0.015
-            self.thr2 += 0.00  #0.015
-
-        print("thrs:", self.thr0, self.thr1, self.thr2)
+        return None
 
     def get_teacher_parameters(self, experiment):
         if experiment == '-1':
