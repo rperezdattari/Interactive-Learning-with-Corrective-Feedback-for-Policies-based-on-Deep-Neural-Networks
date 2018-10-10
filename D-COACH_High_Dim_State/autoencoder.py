@@ -3,18 +3,19 @@ import tensorflow.contrib.layers as lays
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+from models import autoencoder
 
 
 class TrainAE:
-    """Class in charge of training and testing the autoencoder."""
+    """Class in charge of training and evaluating the autoencoder."""
     def __init__(self):
         self.batch_size = 100  # Number of samples in each batch
         self.epoch_num = 20     # Number of epochs to train the network
         self.lr = 0.001        # Learning rate
         self.train_AE = True
         self.use_pre_trained_weights = False
-        self.save_weights = True
-        self.weight_loc = 'graphs/autoencoder/conv_layers_64x64'
+        self.save_graph = True
+        self.graph_loc = 'graphs/autoencoder/conv_layers_64x64'
         self.database = np.load('racing_car_classic_database_64x64.npy')
 
     def next_batch(self, database, batch_size):
@@ -24,24 +25,6 @@ class TrainAE:
             batch[k, :, :] = batch[k, :, :] / 255.0
         return batch
 
-    def autoencoder(self):
-        self.ae_inputs = tf.placeholder(tf.float32, (None, 64, 64, 1), name='image')
-        # encoder
-        net = lays.conv2d(self.ae_inputs, 16, [3, 3], stride=2, padding='SAME')
-        net = lays.conv2d(net, 8, [3, 3], stride=2, padding='SAME')
-        net = lays.conv2d(net, 4, [3, 3], stride=2, padding='SAME')
-        net = tf.identity(net, name='conv_part')
-
-        # decoder
-        net = lays.conv2d_transpose(net, 8, [3, 3], stride=2, padding='SAME')
-        net = lays.conv2d_transpose(net, 16, [3, 3], stride=2, padding='SAME')
-        net = lays.conv2d_transpose(net, 1, [3, 3], stride=2, padding='SAME', activation_fn=tf.nn.sigmoid)
-        self.ae_output = tf.identity(net, name='ae_output')
-
-        # calculate the loss and optimize the network
-        self.loss = tf.reduce_mean(tf.square(self.ae_output - self.ae_inputs))
-        self.train_op = tf.train.AdamOptimizer(learning_rate=self.lr).minimize(self.loss)
-
     def run(self, train=True, show_performance=True):
         # calculate the number of batches per epoch
         batch_per_ep = 12000 // self.batch_size
@@ -49,31 +32,31 @@ class TrainAE:
         sess = tf.Session(graph=graph)
 
         with graph.as_default():
-            self.autoencoder()  # create the Autoencoder network
+            loss, train_op, ae_inputs, ae_output = autoencoder(self.lr)  # create the Autoencoder network
             init = tf.global_variables_initializer()
             saver = tf.train.Saver()
             sess.run(init)
 
             if self.use_pre_trained_weights:
-                saver.restore(sess, self.weight_loc)
+                saver.restore(sess, self.graph_loc)
 
             if train:
                 for ep in range(self.epoch_num):  # epochs loop
                     for batch_n in range(batch_per_ep):  # batches loop
                         batch_img = self.next_batch(self.database, self.batch_size)  # read a batch
                         batch_img = batch_img.reshape((-1, 64, 64, 1))               # reshape each sample to an (96, 96) image
-                        _, c, outputs = sess.run([self.train_op, self.loss, self.ae_output], feed_dict={self.ae_inputs: batch_img})
+                        _, c, outputs = sess.run([train_op, loss, ae_output], feed_dict={ae_inputs: batch_img})
                         print('Epoch: {} - cost= {:.5f}'.format((ep + 1), c))
                         print('Batch progress:', batch_n/batch_per_ep * 100, '%')
 
-                        if self.save_weights:
-                            saver.save(sess, self.weight_loc)
+                        if self.save_graph:
+                            saver.save(sess, self.graph_loc + 'new')
 
             if show_performance:
                 # test the trained network
                 batch_img = self.next_batch(self.database, self.batch_size)  # read a batch
                 batch_img = batch_img.reshape((-1, 64, 64, 1))  # reshape each sample to an (28, 28) image
-                recon_img = sess.run([self.ae_output], feed_dict={self.ae_inputs: batch_img})[0]
+                recon_img = sess.run([ae_output], feed_dict={ae_inputs: batch_img})[0]
 
                 # plot the reconstructed images and their ground truths (inputs)
                 plt.figure(1)

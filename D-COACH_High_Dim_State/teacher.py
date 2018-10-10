@@ -6,7 +6,7 @@ import time
 
 
 class Teacher:
-    def __init__(self, network='FNN', method=1, image_size=64, dim_a=3,
+    def __init__(self, method=1, image_size=64, dim_a=3,
                  action_lower_limits='0,0,0', action_upper_limits='1,1,1',
                  loc='graphs/teacher/CarRacing-v0/network', exp='1', error_prob=0):
         self.graph = tf.Graph()
@@ -23,17 +23,12 @@ class Teacher:
         if method == '1':
             self.AE = AE()
 
-        self.network = network
         self.method = method
         self.image_size = image_size
         self.dim_a = dim_a
         self.action_lower_limits = str_2_array(action_lower_limits)
         self.action_upper_limits = str_2_array(action_upper_limits)
         self.error_prob = float(error_prob)
-
-        self.thr0 = 0.52  # 0.2
-        self.thr1 = 0.26  # 0.07
-        self.thr2 = 0.18  # 0.07
 
         self.teacher_parameters = self.get_teacher_parameters(exp)
         print('\nteacher parameters:', self.teacher_parameters)

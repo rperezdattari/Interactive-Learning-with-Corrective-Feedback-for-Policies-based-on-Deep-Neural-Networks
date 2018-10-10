@@ -51,11 +51,11 @@ config = load_config_data('config_files/' + environment + '/' +
 
 config_graph = config['GRAPH']
 config_buffer = config['BUFFER']
-config_feedback = config['FEEDBACK']
 
 # Load teacher parameters
 config = load_config_data('config_files/' + environment + '/teacher.ini')
 config_teacher = config['TEACHER']
+config_feedback = config['FEEDBACK']
 
 #network = network
 eval_save_folder = '/' + network + '_err20' + method
@@ -147,9 +147,6 @@ total_r = 0
 t_counter = 0
 r = None
 h_counter = 0
-h0_counter = 0
-h1_counter = 0
-h2_counter = 0
 last_t_counter = 0
 init_time = time.time()
 stop_training = False
@@ -267,13 +264,7 @@ for i_episode in range(max_num_of_episodes):
                     print('Total time (s):', (time.time() - init_time))
             if use_teacher:
                 print('Percentage of given feedback:', (h_counter / (t + 1e-6)) * 100)
-                print('Percentage of given feedback 0:', (h0_counter / (t + 1e-6)) * 100)
-                print('Percentage of given feedback 1:', (h1_counter / (t + 1e-6)) * 100)
-                print('Percentage of given feedback 2:', (h2_counter / (t + 1e-6)) * 100)
             h_counter = 0
-            h0_counter = 0
-            h1_counter = 0
-            h2_counter = 0
             if not use_teacher:
                 time.sleep(1)
             break

@@ -2,6 +2,27 @@ import tensorflow.contrib.layers as lays
 import tensorflow as tf
 
 
+def autoencoder(lr):
+    ae_inputs = tf.placeholder(tf.float32, (None, 64, 64, 1), name='image')
+    # encoder
+    net = lays.conv2d(ae_inputs, 16, [3, 3], stride=2, padding='SAME')
+    net = lays.conv2d(net, 8, [3, 3], stride=2, padding='SAME')
+    net = lays.conv2d(net, 4, [3, 3], stride=2, padding='SAME')
+    net = tf.identity(net, name='conv_part')
+
+    # decoder
+    net = lays.conv2d_transpose(net, 8, [3, 3], stride=2, padding='SAME')
+    net = lays.conv2d_transpose(net, 16, [3, 3], stride=2, padding='SAME')
+    net = lays.conv2d_transpose(net, 1, [3, 3], stride=2, padding='SAME', activation_fn=tf.nn.sigmoid)
+    ae_output = tf.identity(net, name='ae_output')
+
+    # calculate the loss and optimize the network
+    loss = tf.reduce_mean(tf.square(ae_output - ae_inputs))
+    train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
+
+    return loss, train_op, ae_inputs, ae_output
+
+
 def fully_connected_layers(encoder_output, dim_a, loss_function_type):
     in_shape = encoder_output.get_shape()
     # Tensor input become 4-D: [Batch Size, Height, Width, Channel]
