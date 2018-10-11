@@ -3,12 +3,13 @@ import numpy as np
 from tools.functions import observation_to_gray, str_2_array
 from autoencoder import AE
 import time
+import cv2
 
 
 class Teacher:
     def __init__(self, method=1, image_size=64, dim_a=3,
                  action_lower_limits='0,0,0', action_upper_limits='1,1,1',
-                 loc='graphs/teacher/CarRacing-v0/network', exp='1', error_prob=0):
+                 loc='graphs/teacher/CarRacing-v0/network', exp='1', error_prob=0, resize_observation=True):
         self.graph = tf.Graph()
         self.sess = tf.Session(graph=self.graph)
         with self.graph.as_default():
@@ -29,12 +30,15 @@ class Teacher:
         self.action_lower_limits = str_2_array(action_lower_limits)
         self.action_upper_limits = str_2_array(action_upper_limits)
         self.error_prob = float(error_prob)
+        self.resize_observation = resize_observation
 
         self.teacher_parameters = self.get_teacher_parameters(exp)
         print('\nteacher parameters:', self.teacher_parameters)
         time.sleep(3)
 
     def action(self, observation):
+        if self.resize_observation:
+            observation = cv2.resize(observation, (self.image_size, self.image_size))
         observation_gray = observation_to_gray(observation, self.image_size)
         observation = self.AE.conv_representation(observation_gray)
 

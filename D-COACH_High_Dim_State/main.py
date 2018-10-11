@@ -6,9 +6,7 @@ import configparser
 import argparse
 import os
 import sys
-from tools.functions import observation_to_gray
 from memory_buffer import MemoryBuffer
-import cv2
 from feedback import Feedback
 from agent import Agent
 from teacher import Teacher
@@ -50,6 +48,7 @@ config = load_config_data('config_files/' + environment + '/' +
 
 config_graph = config['GRAPH']
 config_buffer = config['BUFFER']
+config_general = config['GENERAL']
 
 # Load teacher parameters
 config = load_config_data('config_files/' + environment + '/teacher.ini')
@@ -76,6 +75,7 @@ use_memory_buffer = config_buffer.getboolean('use')
 image_size = config_graph.getint('image_side_length')
 resize_observation = config_graph.getboolean('resize_observation')
 stop_training = config_exp_setup.getboolean('stop_training')
+render_delay = float(config_general['render_delay'])
 
 if not use_memory_buffer:
     eval_save_folder += '_no_buffer'
@@ -94,7 +94,8 @@ if use_teacher:
                       action_upper_limits=config_teacher['action_upper_limits'],
                       loc=config_teacher['loc'],
                       exp=exp_num,
-                      error_prob=error_prob)
+                      error_prob=error_prob,
+                      resize_observation=resize_observation)
 
 # Create agent
 agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
@@ -109,7 +110,8 @@ agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
               action_lower_limits=config_graph['action_lower_limits'],
               e=config_graph['e'],
               show_ae_output=show_ae_output,
-              show_state=show_state)
+              show_state=show_state,
+              resize_observation=resize_observation)
 
 # Create memory buffer
 buffer = MemoryBuffer(min_size=config_buffer.getint('min_size'),
@@ -153,35 +155,34 @@ if count_down:
 
 # Iterate over the maximum number of episodes
 for i_episode in range(max_num_of_episodes):
+    print('Starting episode number', i_episode)
     agent.new_episode()
+    r = 0
+    observation = env.reset()
+
     if use_teacher:
         teacher.new_episode(i_episode)
 
-    observation = env.reset()  # If the environment is reset, the first observation is given
-    if resize_observation:
-        observation = cv2.resize(observation, (image_size, image_size))
     if evaluate and r is not None:
         print('reward episode %i:' % i_episode, r)
 
-    r = 0
-    print('Starting episode number', i_episode)
     # Iterate over the episode
     for t in range(int(max_time_steps_episode)):
         if render:
             env.render()  # Make the environment visible
+            time.sleep(render_delay)  # Add delay to rendering if necessary
+                
         # Map action from state
         action = agent.action(observation)
 
         # Act
         observation, reward, done, info = env.step(action)
-        if resize_observation:
-            observation = cv2.resize(observation, (image_size, image_size))
+
+        # Accumulate reward
         r += reward
 
         # Get feedback signal
-        if stop_training:
-            h = human_feedback.h_null
-        elif use_teacher:
+        if use_teacher:
             h = teacher.get_feedback_signal(observation, action, t_counter)
         else:
             h = human_feedback.get_h()
@@ -219,10 +220,6 @@ for i_episode in range(max_num_of_episodes):
             init_time = time.time()
             last_t_counter = t_counter
             print('\nFPS:', fps, '\n')
-
-        # Add delay to rendering if necessary
-        if render:
-            time.sleep(0.001)
 
         # End of episode
         if done or human_feedback.ask_for_done():

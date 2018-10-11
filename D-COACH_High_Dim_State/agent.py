@@ -4,13 +4,15 @@ from autoencoder import TrainAE, AE
 from models import fully_connected_layers
 from tools.functions import str_2_array, observation_to_gray, FastImagePlot
 import os
+import cv2
 
 
 class Agent:
     def __init__(self, train_ae=True, load_policy=False, learning_rate=0.001,
                  dim_a=3, loss_function_type='mean_squared', policy_loc='./racing_car_m2/network',
                  image_size=64, action_upper_limits='1,1', action_lower_limits='-1,-1', e='1',
-                 ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64', show_ae_output=True, show_state=True):
+                 ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64',
+                 show_ae_output=True, show_state=True, resize_observation=True):
         # Initialize variables
         self.observation = None
         self.y_label = None
@@ -29,6 +31,7 @@ class Agent:
 
         # High-dimensional state initialization
         self.low_dim_observation = None
+        self.resize_observation = resize_observation
         self.image_size = image_size
         self.show_state = show_state
         self.show_ae_output = show_ae_output
@@ -50,10 +53,10 @@ class Agent:
 
             self.AE = AE(ae_loc=ae_loc)
             ae_encoder = self.AE.latent_space
-            self.ae_low_dim_input_shape = ae_encoder.get_shape()[1:]
-            self.low_dim_input = tf.placeholder(tf.float32, [None, self.ae_low_dim_input_shape[0],
-                                                             self.ae_low_dim_input_shape[1],
-                                                             self.ae_low_dim_input_shape[2]],
+            self.low_dim_input_shape = ae_encoder.get_shape()[1:]
+            self.low_dim_input = tf.placeholder(tf.float32, [None, self.low_dim_input_shape[0],
+                                                             self.low_dim_input_shape[1],
+                                                             self.low_dim_input_shape[2]],
                                                 name='input')
 
             self.low_dim_input = tf.identity(self.low_dim_input, name='low_dim_input')
@@ -74,12 +77,16 @@ class Agent:
     def _load_network(self):
             self.saver.restore(self.sess, self.policy_loc)
 
+    def _encode_observation(self, observation):
+        if self.resize_observation:
+            observation = cv2.resize(observation, (self.image_size, self.image_size))
+        self.observation = observation_to_gray(observation, self.image_size)
+        self.low_dim_observation = self.AE.conv_representation(self.observation)
+
     def update(self, h, observation):
-        observation = observation_to_gray(observation, self.image_size)
+        self._encode_observation(observation)
 
-        low_dim_observation = self.AE.conv_representation(observation)
-
-        action = self.y.eval(session=self.sess, feed_dict={'base/input:0': low_dim_observation})
+        action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
 
         error = np.array(h * self.e).reshape(1, self.dim_a)
         self.y_label = []
@@ -91,7 +98,7 @@ class Agent:
 
         self.y_label = np.array(self.y_label).reshape(1, self.dim_a)
 
-        self.sess.run(self.train_step, feed_dict={'base/input:0': low_dim_observation,
+        self.sess.run(self.train_step, feed_dict={'base/input:0': self.low_dim_observation,
                                                   'base/label:0': self.y_label})
 
     def batch_update(self, batch):
@@ -102,9 +109,7 @@ class Agent:
                                                   'base/label:0': y_label_batch})
 
     def action(self, observation):
-        self.observation = observation_to_gray(observation, self.image_size)
-
-        self.low_dim_observation = self.AE.conv_representation(self.observation)
+        self._encode_observation(observation)
 
         action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
         out_action = []
@@ -115,11 +120,8 @@ class Agent:
 
         return np.array(out_action)
 
-    def ae_output(self, observation):
-        return self.AE.output(observation)
-
     def last_step(self):
-        return [self.low_dim_observation.reshape(self.ae_low_dim_input_shape), self.y_label.reshape(self.dim_a)]
+        return [self.low_dim_observation.reshape(self.low_dim_input_shape), self.y_label.reshape(self.dim_a)]
 
     def save_params(self):
         if not os.path.exists(self.policy_loc):
@@ -136,4 +138,7 @@ class Agent:
 
     def new_episode(self):
         pass
+
+    def ae_output(self, observation):
+        return self.AE.output(observation)
 
