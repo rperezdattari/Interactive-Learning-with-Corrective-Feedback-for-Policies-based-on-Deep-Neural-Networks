@@ -2,27 +2,21 @@ import tensorflow as tf
 import numpy as np
 from autoencoder import TrainAE, AE
 from models import fully_connected_layers
-from tools.functions import str_2_array, observation_to_gray, FastImagePlot
-import os
+from tools.functions import observation_to_gray, FastImagePlot
+from agent_base import AgentBase
 import cv2
 
 
-class Agent:
+class Agent(AgentBase):
     def __init__(self, train_ae=True, load_policy=False, learning_rate=0.001,
                  dim_a=3, loss_function_type='mean_squared', policy_loc='./racing_car_m2/network',
                  image_size=64, action_upper_limits='1,1', action_lower_limits='-1,-1', e='1',
                  ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64',
                  show_ae_output=True, show_state=True, resize_observation=True):
-        # Initialize variables
-        self.observation = None
-        self.y_label = None
-        self.e = np.array(str_2_array(e, type_n='float'))
-        self.dim_a = dim_a
 
-        self.policy_loc = policy_loc + 'network'
-
-        self.action_upper_limits = str_2_array(action_upper_limits)
-        self.action_lower_limits = str_2_array(action_lower_limits)
+        super(Agent, self).__init__(dim_a=dim_a, policy_loc=policy_loc,
+                                    action_upper_limits=action_upper_limits,
+                                    action_lower_limits=action_lower_limits, e=e)
 
         self._build_network(train_ae, ae_loc, dim_a, loss_function_type, learning_rate)
 
@@ -30,7 +24,6 @@ class Agent:
             self._load_network()
 
         # High-dimensional state initialization
-        self.low_dim_observation = None
         self.resize_observation = resize_observation
         self.image_size = image_size
         self.show_state = show_state
@@ -83,62 +76,5 @@ class Agent:
         self.observation = observation_to_gray(observation, self.image_size)
         self.low_dim_observation = self.AE.conv_representation(self.observation)
 
-    def update(self, h, observation):
-        self._encode_observation(observation)
-
-        action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
-
-        error = np.array(h * self.e).reshape(1, self.dim_a)
-        self.y_label = []
-
-        for i in range(self.dim_a):
-            self.y_label.append(np.clip(action[0, i] + error[0, i],
-                                        self.action_lower_limits[i],
-                                        self.action_upper_limits[i]))
-
-        self.y_label = np.array(self.y_label).reshape(1, self.dim_a)
-
-        self.sess.run(self.train_step, feed_dict={'base/input:0': self.low_dim_observation,
-                                                  'base/label:0': self.y_label})
-
-    def batch_update(self, batch):
-        state_batch = [np.array(pair[0]) for pair in batch]
-        y_label_batch = [np.array(pair[1]) for pair in batch]
-
-        self.sess.run(self.train_step, feed_dict={'base/input:0': state_batch,
-                                                  'base/label:0': y_label_batch})
-
-    def action(self, observation):
-        self._encode_observation(observation)
-
-        action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
-        out_action = []
-
-        for i in range(self.dim_a):
-            action[0, i] = np.clip(action[0, i], self.action_lower_limits[i], self.action_upper_limits[i])
-            out_action.append(action[0, i])
-
-        return np.array(out_action)
-
-    def last_step(self):
-        return [self.low_dim_observation.reshape(self.low_dim_input_shape), self.y_label.reshape(self.dim_a)]
-
-    def save_params(self):
-        if not os.path.exists(self.policy_loc):
-            os.makedirs(self.policy_loc)
-
-        self.saver.save(self.sess, self.policy_loc)
-
-    def time_step_info(self, t):
-        if t % 4 == 0 and self.show_state:
-            self.state_plot.refresh(self.observation)
-
-        if (t+2) % 4 == 0 and self.show_ae_output:
-            self.ae_output_plot.refresh(self.ae_output(self.observation))
-
-    def new_episode(self):
-        pass
-
     def ae_output(self, observation):
         return self.AE.output(observation)
-
