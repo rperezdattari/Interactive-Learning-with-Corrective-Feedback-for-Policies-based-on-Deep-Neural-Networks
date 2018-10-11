@@ -6,7 +6,6 @@ import configparser
 import argparse
 import os
 import sys
-from tools.fast_image_plot import FastImagePlot
 from tools.functions import observation_to_gray
 from memory_buffer import MemoryBuffer
 import cv2
@@ -108,7 +107,9 @@ agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
               image_size=config_graph.getint('image_side_length'),
               action_upper_limits=config_graph['action_upper_limits'],
               action_lower_limits=config_graph['action_lower_limits'],
-              e=config_graph['e'])
+              e=config_graph['e'],
+              show_ae_output=show_ae_output,
+              show_state=show_state)
 
 # Create memory buffer
 buffer = MemoryBuffer(min_size=config_buffer.getint('min_size'),
@@ -162,12 +163,6 @@ for i_episode in range(max_num_of_episodes):
     if evaluate and r is not None:
         print('reward episode %i:' % i_episode, r)
 
-    if show_state and i_episode == 0:
-        state_plot = FastImagePlot(1, observation_to_gray(observation, image_size), image_size, 'Image State', vmax=0.5)
-
-    if show_ae_output and i_episode == 0:
-        ae_out_plot = FastImagePlot(2, agent.ae_output(observation), image_size, 'Autoencoder Output', vmax=0.5)
-
     r = 0
     print('Starting episode number', i_episode)
     # Iterate over the episode
@@ -182,10 +177,6 @@ for i_episode in range(max_num_of_episodes):
         if resize_observation:
             observation = cv2.resize(observation, (image_size, image_size))
         r += reward
-
-        if stop_training:
-            if i_episode >= max_num_of_episodes:
-                stop_training = True
 
         # Get feedback signal
         if stop_training:
@@ -220,11 +211,7 @@ for i_episode in range(max_num_of_episodes):
         t_counter += 1
 
         # For debugging
-        if t % 4 == 0 and show_state:
-            state_plot.refresh(observation_to_gray(observation, image_size))
-
-        if (t+2) % 4 == 0 and show_ae_output:
-            ae_out_plot.refresh(agent.ae_output(observation))
+        agent.time_step_info(t)
 
         # Calculate FPS
         if t % 100 == 0 and t != 0 and show_FPS:
@@ -233,9 +220,11 @@ for i_episode in range(max_num_of_episodes):
             last_t_counter = t_counter
             print('\nFPS:', fps, '\n')
 
-        # End of episode
+        # Add delay to rendering if necessary
         if render:
             time.sleep(0.001)
+
+        # End of episode
         if done or human_feedback.ask_for_done():
             reward_results = np.append(reward_results, r)
             if train:

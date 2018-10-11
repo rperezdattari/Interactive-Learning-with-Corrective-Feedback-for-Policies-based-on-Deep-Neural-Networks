@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def str_2_array(str_state_shape, type_n='int'):
@@ -25,3 +26,20 @@ def observation_to_gray(observation, image_size):
     observation_gray_norm = observation_gray / 255.0
 
     return observation_gray_norm
+
+
+class FastImagePlot:
+    def __init__(self, fig_num, observation, image_size, title_name, vmin=0, vmax=1):
+        self.window = plt.figure(fig_num)
+        self.image_size = image_size
+        self.im = plt.imshow(np.reshape(observation, [self.image_size, self.image_size]),
+                             cmap='gray', vmin=vmin, vmax=vmax)
+        plt.show(block=False)
+        self.window.canvas.set_window_title(title_name)
+        self.window.canvas.draw()
+
+    def refresh(self, observation):
+        self.im.set_data(np.reshape(observation, [self.image_size, self.image_size]))
+        self.window.draw_artist(self.im)
+        self.window.canvas.blit()
+        self.window.canvas.flush_events()
