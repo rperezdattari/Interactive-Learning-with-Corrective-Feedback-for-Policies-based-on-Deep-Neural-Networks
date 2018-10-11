@@ -7,7 +7,7 @@ import cv2
 
 
 class Teacher:
-    def __init__(self, method=1, image_size=64, dim_a=3,
+    def __init__(self, image_size=64, dim_a=3,
                  action_lower_limits='0,0,0', action_upper_limits='1,1,1',
                  loc='graphs/teacher/CarRacing-v0/network', exp='1', error_prob=0, resize_observation=True):
         self.graph = tf.Graph()
@@ -21,10 +21,8 @@ class Teacher:
             self.saver.restore(self.sess, loc)
             self.action_out = self.graph.get_operation_by_name('base/action/Tanh').outputs[0]
 
-        if method == '1':
-            self.AE = AE()
+        self.AE = AE()
 
-        self.method = method
         self.image_size = image_size
         self.dim_a = dim_a
         self.action_lower_limits = str_2_array(action_lower_limits)
@@ -74,9 +72,6 @@ class Teacher:
                 h[2] = h[2] * -1
 
         return h
-
-    def new_episode(self, i_episode):
-        return None
 
     def get_teacher_parameters(self, experiment):
         if experiment == '-1':

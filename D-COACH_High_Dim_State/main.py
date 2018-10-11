@@ -1,7 +1,6 @@
 import gym
 import numpy as np
 import time
-import tensorflow as tf
 import configparser
 import argparse
 import os
@@ -64,6 +63,7 @@ train = config_exp_setup.getboolean('train')
 use_teacher = config_exp_setup.getboolean('use_teacher')
 show_state = config_exp_setup.getboolean('show_state')
 render = config_exp_setup.getboolean('render')
+count_down = config_exp_setup.getboolean('count_down')
 save_results = config_exp_setup.getboolean('save_results')
 save_graph = config_exp_setup.getboolean('save_graph')
 show_ae_output = config_exp_setup.getboolean('show_ae_output')
@@ -74,7 +74,6 @@ history_training_rate = config_buffer.getint('history_training_rate')
 use_memory_buffer = config_buffer.getboolean('use')
 image_size = config_graph.getint('image_side_length')
 resize_observation = config_graph.getboolean('resize_observation')
-stop_training = config_exp_setup.getboolean('stop_training')
 render_delay = float(config_general['render_delay'])
 
 if not use_memory_buffer:
@@ -87,8 +86,7 @@ env = gym.make(environment)
 
 # Create teacher
 if use_teacher:
-    teacher = Teacher(method=config_teacher['method'],
-                      image_size=config_teacher.getint('image_side_length'),
+    teacher = Teacher(image_size=config_teacher.getint('image_side_length'),
                       dim_a=config_teacher.getint('dim_a'),
                       action_lower_limits=config_teacher['action_lower_limits'],
                       action_upper_limits=config_teacher['action_upper_limits'],
@@ -133,45 +131,27 @@ if save_results:
         os.makedirs(eval_save_path + eval_save_folder)
 
 # Initialize variables
-init_op = tf.initialize_all_variables()
-reward_results = np.array([])
-feedback_percentage = np.array([])
-total_time = []
-last_episode_received_feedback = 1
-total_r = 0
-t_counter = 0
-r = None
-h_counter = 0
-last_t_counter = 0
-init_time = time.time()
-stop_training = False
-count_down = False
+total_reward, total_feedback, total_time_steps = [], [], []
+r, total_r, t_counter, h_counter, last_t_counter = 0, 0, 0, 0, 0
 
 if count_down:
     for i in range(10):
         print(' ' + str(10 - i) + '...')
         time.sleep(1)
 
-
 # Iterate over the maximum number of episodes
+init_time = time.time()
 for i_episode in range(max_num_of_episodes):
     print('Starting episode number', i_episode)
     agent.new_episode()
-    r = 0
     observation = env.reset()
-
-    if use_teacher:
-        teacher.new_episode(i_episode)
-
-    if evaluate and r is not None:
-        print('reward episode %i:' % i_episode, r)
 
     # Iterate over the episode
     for t in range(int(max_time_steps_episode)):
         if render:
             env.render()  # Make the environment visible
             time.sleep(render_delay)  # Add delay to rendering if necessary
-                
+
         # Map action from state
         action = agent.action(observation)
 
@@ -223,25 +203,26 @@ for i_episode in range(max_num_of_episodes):
 
         # End of episode
         if done or human_feedback.ask_for_done():
-            reward_results = np.append(reward_results, r)
-            if train:
-                last_episode_received_feedback = h_counter / (t + 1e6)
-            if save_graph:
-                agent.save_params()
             if evaluate:
                 total_r += r
-                print('episode reward:', r)
-                print('\n', i_episode, 'avg reward:', total_r / (i_episode + 1), '\n')
+                print('Episode Reward:', '%.3f' % r)
+                print('\n', i_episode, 'avg reward:', '%.3f' % (total_r / (i_episode + 1)), '\n')
+                print('Percentage of given feedback:', '%.3f' % ((h_counter / (t + 1e-6)) * 100))
                 if save_results:
-                    np.save(eval_save_path + eval_save_folder + output_reward_results_name + 'reward', reward_results)
-                    feedback_percentage = np.append(feedback_percentage, h_counter / (t + 1e-6))
-                    np.save(eval_save_path + eval_save_folder + output_reward_results_name + 'feedback', feedback_percentage)
-                    total_time.append(t_counter)
-                    np.save(eval_save_path + eval_save_folder + output_reward_results_name + 'time', total_time)
-                    print('Total time (s):', (time.time() - init_time))
-            if use_teacher:
-                print('Percentage of given feedback:', (h_counter / (t + 1e-6)) * 100)
-            h_counter = 0
-            if not use_teacher:
+                    total_reward.append(r)
+                    total_feedback.append(h_counter)
+                    total_time_steps.append(t_counter)
+                    np.save(eval_save_path + eval_save_folder + output_reward_results_name + 'reward', total_reward)
+                    np.save(eval_save_path + eval_save_folder + output_reward_results_name + 'feedback', total_feedback)
+                    np.save(eval_save_path + eval_save_folder + output_reward_results_name + 'time', total_time_steps)
+
+            if save_graph:
+                agent.save_params()
+
+            if render:
                 time.sleep(1)
+
+            h_counter = 0
+            r = 0
+            print('Total time (s):', '%.3f' % (time.time() - init_time))
             break
