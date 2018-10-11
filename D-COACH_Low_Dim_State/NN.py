@@ -2,15 +2,6 @@ import tensorflow as tf
 import tensorflow.contrib as tc
 import numpy as np
 
-def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev=0.01)
-    return tf.Variable(initial)
-
-
-def bias_variable(shape):
-    initial = tf.constant(0.0, shape=shape)
-    return tf.Variable(initial)
-
 
 class NN():
     def __init__(self, buffer):

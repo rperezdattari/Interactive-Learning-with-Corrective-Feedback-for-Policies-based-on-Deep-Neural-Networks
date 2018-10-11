@@ -108,9 +108,7 @@ agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
               image_size=config_graph.getint('image_side_length'),
               action_upper_limits=config_graph['action_upper_limits'],
               action_lower_limits=config_graph['action_lower_limits'],
-              e=config_graph['e'],
-              method=method,
-              network=network)
+              e=config_graph['e'])
 
 # Create memory buffer
 buffer = MemoryBuffer(min_size=config_buffer.getint('min_size'),
@@ -154,7 +152,7 @@ if count_down:
 
 # Iterate over the maximum number of episodes
 for i_episode in range(max_num_of_episodes):
-    agent.new_episode(i_episode)
+    agent.new_episode()
     if use_teacher:
         teacher.new_episode(i_episode)
 

@@ -10,34 +10,26 @@ class Agent:
     def __init__(self, train_ae=True, load_policy=False, learning_rate=0.001,
                  dim_a=3, loss_function_type='mean_squared', policy_loc='./racing_car_m2/network',
                  image_size=64, action_upper_limits='1,1', action_lower_limits='-1,-1', e='1',
-                 network='FNN', method='1', ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64'):
+                 ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64'):
         # Initialize variables
         self.observation = None
         self.y_label = None
-
-        # COACH parameters
         self.e = np.array(str_2_array(e, type_n='float'))
-
-        # graph parameters
         self.dim_a = dim_a
 
-        if not os.path.exists(policy_loc):
-            os.makedirs(policy_loc)
         self.policy_loc = policy_loc + 'network'
-        #self.policy_loc = 'graphs/racing_car_NN/RodrigoPerez_network_newv2v4_v6_v6_v7'
 
-        if not os.path.exists(policy_loc):
-            os.makedirs(policy_loc)
         self.action_upper_limits = str_2_array(action_upper_limits)
         self.action_lower_limits = str_2_array(action_lower_limits)
+
+        self._build_network(train_ae, ae_loc, dim_a, loss_function_type, learning_rate, load_policy)
+
+        if load_policy:
+            self._load_network()
+
         self.image_size = image_size
-        self.network = network
-        self.method = method
 
-        self.episode_gradients = 0
-        self.g_counter = 0
-        self.episode_last_gradients = -1
-
+    def _build_network(self, train_ae, ae_loc, dim_a, loss_function_type, learning_rate, load_policy):
         with tf.variable_scope('base'):
             # Initialize graph
             if train_ae:
@@ -45,7 +37,7 @@ class Agent:
                 ae_trainer.run(train=True, show_performance=True)
 
             self.AE = AE(ae_loc=ae_loc)
-            ae_encoder = self.AE.code
+            ae_encoder = self.AE.latent_space
             self.ae_encoder_shape = ae_encoder.get_shape()
             self.low_dim_input = tf.placeholder(tf.float32, [None, self.ae_encoder_shape[1],
                                                              self.ae_encoder_shape[2],
@@ -57,16 +49,18 @@ class Agent:
             # build fully connected layers
             self.y, loss = fully_connected_layers(self.low_dim_input, dim_a, loss_function_type)
 
-        part1 = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'base')
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'base')
         self.train_step = tf.train.MomentumOptimizer(learning_rate=learning_rate,
-                                                     momentum=0.00).minimize(loss, var_list=part1)
+                                                     momentum=0.00).minimize(loss, var_list=variables)
 
         # initialize tensorflow
-        self.init = tf.global_variables_initializer()
+        init = tf.global_variables_initializer()
         self.sess = tf.Session()
-        self.sess.run(self.init)
+        self.sess.run(init)
         self.saver = tf.train.Saver()
-        self.load_network(load=load_policy)
+
+    def _load_network(self):
+            self.saver.restore(self.sess, self.policy_loc)
 
     def update(self, h, observation):
         observation = observation_to_gray(observation, self.image_size)
@@ -116,14 +110,11 @@ class Agent:
         return [self.observation.reshape(self.ae_encoder_shape[1:]), self.y_label.reshape(self.dim_a)]
 
     def save_params(self):
+        if not os.path.exists(self.policy_loc):
+            os.makedirs(self.policy_loc)
+
         self.saver.save(self.sess, self.policy_loc)
 
-    def load_network(self, load=True):
-        if load:
-            self.saver.restore(self.sess, self.policy_loc)
-        else:
-            return None
-
-    def new_episode(self, i_episode):
-        return None
+    def new_episode(self):
+        pass
 

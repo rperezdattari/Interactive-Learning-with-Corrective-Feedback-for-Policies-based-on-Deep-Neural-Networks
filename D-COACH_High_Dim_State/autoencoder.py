@@ -85,11 +85,11 @@ class AE:
             self.saver = tf.train.Saver()
             self.sess.run(self.init)
             self.saver.restore(self.sess, ae_loc)
-            self.code = self.graph.get_operation_by_name('conv_part').outputs[0]
+            self.latent_space = self.graph.get_operation_by_name('conv_part').outputs[0]
             self.ae_output = self.graph.get_operation_by_name('ae_output').outputs[0]
 
     def conv_representation(self, observation):
-        return self.sess.run(self.code, feed_dict={'image:0': observation})
+        return self.sess.run(self.latent_space, feed_dict={'image:0': observation})
 
     def output(self, observation):
         return self.sess.run(self.ae_output, feed_dict={'image:0': observation})
