@@ -9,7 +9,8 @@ import cv2
 class Teacher:
     def __init__(self, image_size=64, dim_a=3,
                  action_lower_limits='0,0,0', action_upper_limits='1,1,1',
-                 loc='graphs/teacher/CarRacing-v0/network', exp='1', error_prob=0, resize_observation=True):
+                 loc='graphs/teacher/CarRacing-v0/network', exp='1', error_prob=0,
+                 resize_observation=True, teacher_parameters='0.6,0.00001'):
         self.graph = tf.Graph()
         self.sess = tf.Session(graph=self.graph)
         with self.graph.as_default():
@@ -30,8 +31,8 @@ class Teacher:
         self.error_prob = float(error_prob)
         self.resize_observation = resize_observation
 
-        self.teacher_parameters = self.get_teacher_parameters(exp)
-        print('\nteacher parameters:', self.teacher_parameters)
+        self.teacher_parameters = str_2_array(teacher_parameters, 'float')
+        print('\nTeacher parameters:', self.teacher_parameters)
         time.sleep(3)
 
     def action(self, observation):
@@ -72,18 +73,4 @@ class Teacher:
                 h[2] = h[2] * -1
 
         return h
-
-    def get_teacher_parameters(self, experiment):
-        if experiment == '-1':
-            return [0.6, 0.00001]
-        parameters = {'1': [0.6, 0.00001], '2': [0.6, 0.00002], '3': [0.6, 0.00003], '4': [0.6, 0.00004],
-                      '5': [0.6, 0.00005], '6': [0.6, 0.00006], '7': [0.6, 0.00007], '8': [0.6, 0.00008],
-                      '9': [0.6, 0.00009], '10': [0.6, 0.0001], '11': [0.7, 0.00001], '12': [0.7, 0.00002],
-                      '13': [0.7, 0.00003], '14': [0.7, 0.00004], '15': [0.7, 0.00005], '16': [0.7, 0.00006],
-                      '17': [0.7, 0.00007], '18': [0.7, 0.00008], '19': [0.7, 0.00009], '20': [0.7, 0.0001],
-                      '21': [0.8, 0.00001], '22': [0.8, 0.00002], '23': [0.8, 0.00003], '24': [0.8, 0.00004],
-                      '25': [0.8, 0.00005], '26': [0.8, 0.00006], '27': [0.8, 0.00007], '28': [0.8, 0.00008],
-                      '29': [0.8, 0.00009], '30': [0.8, 0.0001]}
-
-        return [0.6, 0.000015]  # 0.000025
 

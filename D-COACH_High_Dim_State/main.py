@@ -13,7 +13,7 @@ from tools.functions import load_config_data
 
 # Read program args
 parser = argparse.ArgumentParser()
-parser.add_argument('--config-file', default='config1')
+parser.add_argument('--config-file', default='cartpole')
 parser.add_argument('--exp-num', default='-1')
 args = parser.parse_args()
 
@@ -46,7 +46,7 @@ eval_save_folder = '/' + network
 eval_save_path = config_exp_setup['eval_save_path']
 evaluate = config_exp_setup.getboolean('evaluate')
 train = config_exp_setup.getboolean('train')
-use_teacher = config_exp_setup.getboolean('use_teacher')
+use_simulated_teacher = config_exp_setup.getboolean('use_simulated_teacher')
 show_state = config_exp_setup.getboolean('show_state')
 render = config_exp_setup.getboolean('render')
 count_down = config_exp_setup.getboolean('count_down')
@@ -71,7 +71,7 @@ output_reward_results_name = '/' + network + '_results_' + exp_num + '_'
 env = gym.make(environment)
 
 # Create teacher
-if use_teacher:
+if use_simulated_teacher:
     teacher = Teacher(image_size=config_teacher.getint('image_side_length'),
                       dim_a=config_teacher.getint('dim_a'),
                       action_lower_limits=config_teacher['action_lower_limits'],
@@ -79,13 +79,15 @@ if use_teacher:
                       loc=config_teacher['loc'],
                       exp=exp_num,
                       error_prob=error_prob,
-                      resize_observation=resize_observation)
+                      resize_observation=resize_observation,
+                      teacher_parameters=config_general['simulated_teacher_parameters'])
 
 # Create agent
 agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
               load_policy=config_graph.getboolean('load'),
               learning_rate=float(config_graph['learning_rate']),
               dim_a=config_graph.getint('dim_a'),
+              fc_layers_neurons = config_graph.getint('fc_layers_neurons'),
               loss_function_type=config_graph['loss_function_type'],
               policy_loc=config_graph['policy_loc'] + exp_num + '_',
               ae_loc=config_graph['ae_loc'],
@@ -123,7 +125,7 @@ r, total_r, t_counter, h_counter, last_t_counter = 0, 0, 0, 0, 0
 # Print general general information
 print('\nExperiment number:', exp_num)
 print('Environment:', environment)
-print('Network:', network)
+print('Network:', network, '\n')
 time.sleep(3)
 
 # Count-down before training if requested
@@ -155,7 +157,7 @@ for i_episode in range(max_num_of_episodes):
         r += reward
 
         # Get feedback signal
-        if use_teacher:
+        if use_simulated_teacher:
             h = teacher.get_feedback_signal(observation, action, t_counter)
         else:
             h = human_feedback.get_h()
@@ -165,7 +167,7 @@ for i_episode in range(max_num_of_episodes):
         if train:
             if np.any(h):  # if any element is not 0
                 agent.update(h, observation)
-                if not use_teacher:
+                if not use_simulated_teacher:
                     print("feedback", h)
                 h_counter += 1
                 # Add state action-label pair to memory buffer

@@ -9,15 +9,15 @@ import cv2
 
 class Agent(AgentBase):
     def __init__(self, train_ae=True, load_policy=False, learning_rate=0.001,
-                 dim_a=3, loss_function_type='mean_squared', policy_loc='./racing_car_m2/network',
-                 image_size=64, action_upper_limits='1,1', action_lower_limits='-1,-1', e='1',
-                 ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64',
+                 dim_a=3, fc_layers_neurons=100, loss_function_type='mean_squared',
+                 policy_loc='./racing_car_m2/network', image_size=64, action_upper_limits='1,1',
+                 action_lower_limits='-1,-1', e='1', ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64',
                  show_ae_output=True, show_state=True, resize_observation=True):
 
         super(Agent, self).__init__(dim_a=dim_a, policy_loc=policy_loc, action_upper_limits=action_upper_limits,
                                     action_lower_limits=action_lower_limits, e=e, load_policy=load_policy,
                                     train_ae=train_ae, ae_loc=ae_loc, loss_function_type=loss_function_type,
-                                    learning_rate=learning_rate)
+                                    learning_rate=learning_rate, fc_layers_neurons=fc_layers_neurons)
 
         # High-dimensional state initialization
         self.resize_observation = resize_observation
@@ -50,14 +50,16 @@ class Agent(AgentBase):
 
             self.low_dim_input = tf.identity(self.low_dim_input, name='low_dim_input')
 
-            # build fully connected layers
-            self.y, loss = fully_connected_layers(self.low_dim_input, dim_a, params['loss_function_type'])
+            # Build fully connected layers
+            self.y, loss = fully_connected_layers(self.low_dim_input, dim_a,
+                                                  params['fc_layers_neurons'],
+                                                  params['loss_function_type'])
 
         variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'base')
         self.train_step = tf.train.MomentumOptimizer(learning_rate=params['learning_rate'],
                                                      momentum=0.00).minimize(loss, var_list=variables)
 
-        # initialize tensorflow
+        # Initialize tensorflow
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
