@@ -51,7 +51,7 @@ class Agent(AgentBase):
             self.low_dim_input = tf.identity(self.low_dim_input, name='low_dim_input')
 
             # Build fully connected layers
-            self.y, loss = fully_connected_layers(self.low_dim_input, dim_a,
+            self.y, loss = fully_connected_layers(tf.contrib.layers.flatten(self.low_dim_input), dim_a,
                                                   params['fc_layers_neurons'],
                                                   params['loss_function_type'])
 

@@ -23,20 +23,13 @@ def autoencoder(lr):
     return loss, train_op, ae_inputs, ae_output
 
 
-def fully_connected_layers(encoder_output, dim_a, fc_layers_neurons, loss_function_type):
-    in_shape = encoder_output.get_shape()
-    # Tensor input become 4-D: [Batch Size, Height, Width, Channel]
-    x = tf.reshape(encoder_output, shape=[-1, in_shape[1], in_shape[2], in_shape[3]])
-
-    # Flatten the data to a 1-D vector for the fully connected layer
-    fc1 = tf.contrib.layers.flatten(x)
-
+def fully_connected_layers(x, dim_a, fc_layers_neurons, loss_function_type):
     # Fully connected layer (in tf contrib folder for now)
-    fc1 = tf.layers.dense(fc1, fc_layers_neurons, activation=tf.nn.tanh)
-    fc1 = tf.layers.dense(fc1, fc_layers_neurons, activation=tf.nn.tanh)
+    fc1 = tf.layers.dense(x, fc_layers_neurons, activation=tf.nn.tanh)
+    fc2 = tf.layers.dense(fc1, fc_layers_neurons, activation=tf.nn.tanh)
 
     # Output layer, class prediction
-    y = tf.layers.dense(fc1, dim_a, activation=tf.nn.tanh, name='action')
+    y = tf.layers.dense(fc2, dim_a, activation=tf.nn.tanh, name='action')
 
     y_ = tf.placeholder(tf.float32, [None, dim_a], name='label')
 

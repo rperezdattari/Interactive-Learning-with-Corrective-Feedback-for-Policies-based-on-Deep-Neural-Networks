@@ -1,6 +1,7 @@
 import tensorflow as tf
-from agents.agent_base import AgentBase
 import numpy as np
+from agents.agent_base import AgentBase
+from models import fully_connected_layers
 
 
 class Agent(AgentBase):
@@ -17,27 +18,17 @@ class Agent(AgentBase):
 
     def _build_network(self, dim_a, params):
         with tf.variable_scope('base'):
-            self.y_ = tf.placeholder(tf.float32, [None, dim_a])
+            # Input data
+            x = tf.placeholder(tf.float32, [None, params['low_dim_input_shape']], name='input')
 
-            # input data
-            self.input = tf.placeholder(tf.float32, [None, params['low_dim_input_shape']], name='input')
-            self.x = tf.layers.dense(self.input, params['fc_layers_neurons'])
-            self.x = tf.nn.relu(self.x)
-            self.x = tf.layers.dense(self.x, params['fc_layers_neurons'])
-            self.x = tf.nn.relu(self.x)
-            self.x = tf.layers.dense(self.x, dim_a,
-                                     kernel_initializer=tf.random_uniform_initializer(minval=-3e-3, maxval=3e-3))
+            # Build fully connected layers
+            self.y, loss = fully_connected_layers(x, dim_a,
+                                                  params['fc_layers_neurons'],
+                                                  params['loss_function_type'])
 
-            self.y = tf.nn.tanh(self.x, name='action')
-            self.error = tf.placeholder(tf.float32, [None, dim_a])
-            self.y_ = tf.placeholder(tf.float32, [None, dim_a], name='label')
-
-            # Define the loss function
-            self.loss = 0.5 * tf.reduce_mean(tf.square(self.y - self.y_))
-
-        # define training step
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'base')
         self.train_step = tf.train.MomentumOptimizer(learning_rate=params['learning_rate'],
-                                                     momentum=0.0).minimize(self.loss)
+                                                     momentum=0.00).minimize(loss, var_list=variables)
 
         # Initialize tensorflow
         init = tf.global_variables_initializer()
