@@ -3,7 +3,7 @@ import numpy as np
 from autoencoder import TrainAE, AE
 from models import fully_connected_layers
 from tools.functions import observation_to_gray, FastImagePlot
-from agent_base import AgentBase
+from agents.agent_base import AgentBase
 import cv2
 
 

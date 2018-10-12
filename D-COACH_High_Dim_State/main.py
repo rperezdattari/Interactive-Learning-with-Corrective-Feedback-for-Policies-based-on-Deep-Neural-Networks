@@ -6,14 +6,14 @@ import os
 import sys
 from memory_buffer import MemoryBuffer
 from feedback import Feedback
-from agent import Agent
+from agents.selector import agent_selector
 from teacher import Teacher
 from tools.functions import load_config_data
 
 
 # Read program args
 parser = argparse.ArgumentParser()
-parser.add_argument('--config-file', default='cartpole')
+parser.add_argument('--config-file', default='car_racing')
 parser.add_argument('--exp-num', default='-1')
 args = parser.parse_args()
 
@@ -47,19 +47,15 @@ eval_save_path = config_exp_setup['eval_save_path']
 evaluate = config_exp_setup.getboolean('evaluate')
 train = config_exp_setup.getboolean('train')
 use_simulated_teacher = config_exp_setup.getboolean('use_simulated_teacher')
-show_state = config_exp_setup.getboolean('show_state')
 render = config_exp_setup.getboolean('render')
 count_down = config_exp_setup.getboolean('count_down')
 save_results = config_exp_setup.getboolean('save_results')
 save_graph = config_exp_setup.getboolean('save_graph')
-show_ae_output = config_exp_setup.getboolean('show_ae_output')
 show_FPS = config_exp_setup.getboolean('show_FPS')
 max_num_of_episodes = config_exp_setup.getint('max_num_of_episodes')
 max_time_steps_episode = float(config_exp_setup['max_time_steps_episode'])
 history_training_rate = config_buffer.getint('history_training_rate')
 use_memory_buffer = config_buffer.getboolean('use')
-image_size = config_graph.getint('image_side_length')
-resize_observation = config_graph.getboolean('resize_observation')
 render_delay = float(config_general['render_delay'])
 
 if not use_memory_buffer:
@@ -79,25 +75,23 @@ if use_simulated_teacher:
                       loc=config_teacher['loc'],
                       exp=exp_num,
                       error_prob=error_prob,
-                      resize_observation=resize_observation,
+                      resize_observation=config_general.getboolean('resize_observation'),
                       teacher_parameters=config_general['simulated_teacher_parameters'])
 
 # Create agent
-agent = Agent(train_ae=config_graph.getboolean('train_autoencoder'),
-              load_policy=config_graph.getboolean('load'),
-              learning_rate=float(config_graph['learning_rate']),
-              dim_a=config_graph.getint('dim_a'),
-              fc_layers_neurons = config_graph.getint('fc_layers_neurons'),
-              loss_function_type=config_graph['loss_function_type'],
-              policy_loc=config_graph['policy_loc'] + exp_num + '_',
-              ae_loc=config_graph['ae_loc'],
-              image_size=config_graph.getint('image_side_length'),
-              action_upper_limits=config_graph['action_upper_limits'],
-              action_lower_limits=config_graph['action_lower_limits'],
-              e=config_graph['e'],
-              show_ae_output=show_ae_output,
-              show_state=show_state,
-              resize_observation=resize_observation)
+agent = agent_selector(network,
+                       train_ae=config_graph.getboolean('train_autoencoder'),
+                       load_policy=config_graph.getboolean('load'),
+                       learning_rate=float(config_graph['learning_rate']),
+                       dim_a=config_graph.getint('dim_a'),
+                       fc_layers_neurons=config_graph.getint('fc_layers_neurons'),
+                       loss_function_type=config_graph['loss_function_type'],
+                       policy_loc=config_graph['policy_loc'] + exp_num + '_',
+                       action_upper_limits=config_graph['action_upper_limits'],
+                       action_lower_limits=config_graph['action_lower_limits'],
+                       e=config_graph['e'],
+                       config_graph=config_graph,
+                       config_general=config_general)
 
 # Create memory buffer
 buffer = MemoryBuffer(min_size=config_buffer.getint('min_size'),
