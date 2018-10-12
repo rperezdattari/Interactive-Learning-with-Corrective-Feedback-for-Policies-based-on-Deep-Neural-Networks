@@ -1,7 +1,6 @@
 import gym
 import numpy as np
 import time
-import configparser
 import argparse
 import os
 import sys
@@ -9,53 +8,40 @@ from memory_buffer import MemoryBuffer
 from feedback import Feedback
 from agent import Agent
 from teacher import Teacher
+from tools.functions import load_config_data
 
 
-def load_config_data(config_dir):
-    config = configparser.ConfigParser()
-    config.read(config_dir)
-    return config
-
-
+# Read program args
 parser = argparse.ArgumentParser()
+parser.add_argument('--config-file', default='config1')
 parser.add_argument('--exp-num', default='-1')
-parser.add_argument('--env-name', default='CarRacing-v0', help='CarRacing-v0, SimpleSim-v0')
-parser.add_argument('--network-type', default='FNN', help='FNN, RNN')
-parser.add_argument('--method', default='1', help='1, 2')
-parser.add_argument('--error-prob', default='0', help='1, 2')
 args = parser.parse_args()
 
+config_file = args.config_file
 exp_num = args.exp_num
-environment = args.env_name
-network = args.network_type
-method = args.method
-error_prob = args.error_prob
-
-print('\nExperiment number:', exp_num)
-print('Environment:', environment)
-print('Network:', network)
-print('Method:', method, '\n')
-time.sleep(3)
 
 # Load common parameters from config file
-config = load_config_data('config_files/config.ini')
+config = load_config_data('config_files/' + config_file + '.ini')
 config_exp_setup = config['EXP_SETUP']
 
+environment = config_exp_setup['environment']
+network = config_exp_setup['network_type']
+error_prob = config_exp_setup['error_prob']
+env_config_file = config_exp_setup['env_config_file']
+
 # Load network and method parameters
-config = load_config_data('config_files/' + environment + '/' +
-                          network + '_m' + method + '.ini')
+config = load_config_data('config_files/' + network + '/' + environment + '/' + env_config_file + '.ini')
 
 config_graph = config['GRAPH']
 config_buffer = config['BUFFER']
 config_general = config['GENERAL']
 
 # Load teacher parameters
-config = load_config_data('config_files/' + environment + '/teacher.ini')
+config = load_config_data('config_files/' + network + '/' + environment + '/teacher.ini')
 config_teacher = config['TEACHER']
 config_feedback = config['FEEDBACK']
 
-#network = network
-eval_save_folder = '/' + network + '_err20' + method
+eval_save_folder = '/' + network
 
 eval_save_path = config_exp_setup['eval_save_path']
 evaluate = config_exp_setup.getboolean('evaluate')
@@ -134,6 +120,13 @@ if save_results:
 total_reward, total_feedback, total_time_steps = [], [], []
 r, total_r, t_counter, h_counter, last_t_counter = 0, 0, 0, 0, 0
 
+# Print general general information
+print('\nExperiment number:', exp_num)
+print('Environment:', environment)
+print('Network:', network)
+time.sleep(3)
+
+# Count-down before training if requested
 if count_down:
     for i in range(10):
         print(' ' + str(10 - i) + '...')

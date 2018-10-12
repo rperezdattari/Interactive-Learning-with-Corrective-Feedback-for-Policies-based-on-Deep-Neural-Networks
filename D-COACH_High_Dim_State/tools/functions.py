@@ -1,5 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import configparser
+
+
+def load_config_data(config_dir):
+    config = configparser.ConfigParser()
+    config.read(config_dir)
+    return config
 
 
 def str_2_array(str_state_shape, type_n='int'):
