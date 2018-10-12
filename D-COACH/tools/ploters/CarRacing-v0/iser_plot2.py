@@ -40,10 +40,10 @@ def get_confidence_interval(data, percentile):
 
 
 def get_reward(name, res, type, folder_name):
-    reward_results = np.load('results/%s/%s_reward.npy' % (folder_name, name))
+    reward_results = np.load('results/CarRacing-v0/%s/%s_reward.npy' % (folder_name, name))
 
     if folder_name in ['FNN_err201', 'FNN_err201_no_buffer', 'FNN_m_test41', 'FNN_m_test5_no_buffer1_no_buffer']:
-        x_raw = np.load('results/%s/%s_time.npy' % (folder_name, name)) * (1/20.5)  # to seconds
+        x_raw = np.load('results/CarRacing-v0/%s/%s_time.npy' % (folder_name, name)) * (1/20.5)  # to seconds
         x = x_raw
         x = np.array(x) / 60  # to minutes
         f = interp1d(np.append(0, x), np.append(0, reward_results))
@@ -51,7 +51,7 @@ def get_reward(name, res, type, folder_name):
         reward_results = f(x)
 
     elif folder_name == 'DDPG':
-        x_raw = np.load('results/%s/timestep_%s.npy' % (folder_name, name)) * (1/20.5)  # to seconda
+        x_raw = np.load('results/CarRacing-v0/%s/timestep_%s.npy' % (folder_name, name)) * (1/20.5)  # to seconda
         x = []
         x.append(x_raw[0])
         for i in range(1, len(x_raw)):
@@ -62,7 +62,7 @@ def get_reward(name, res, type, folder_name):
         reward_results = f(x)
 
     elif type == 'time':
-        x = np.load('results/%s/%s_time.npy' % (folder_name, name)) / 60.0
+        x = np.load('results/CarRacing-v0/%s/%s_time.npy' % (folder_name, name)) / 60.0
         f = interp1d(np.append(0, x), np.append(0, reward_results))
         x = np.arange(0, x[-1], res)
         reward_results = f(x)
