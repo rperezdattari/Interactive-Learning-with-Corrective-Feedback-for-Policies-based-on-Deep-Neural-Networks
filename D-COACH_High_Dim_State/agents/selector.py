@@ -16,8 +16,9 @@ def agent_selector(network, train_ae, load_policy, learning_rate, dim_a, fc_laye
                   resize_observation=config_general.getboolean('resize_observation'))
 
     elif network == 'LD':
-        return LD(train_ae=train_ae, load_policy=load_policy, learning_rate=learning_rate, dim_a=dim_a,
+        return LD(load_policy=load_policy, learning_rate=learning_rate, dim_a=dim_a,
                   fc_layers_neurons=fc_layers_neurons, loss_function_type=loss_function_type, policy_loc=policy_loc,
-                  action_upper_limits=action_upper_limits, action_lower_limits=action_lower_limits, e=e)
+                  action_upper_limits=action_upper_limits, action_lower_limits=action_lower_limits, e=e,
+                  dim_state=config_graph.getint('dim_state'))
     else:
         raise NameError('The selected agent is not valid. Try using: NN or linear_RBFs')

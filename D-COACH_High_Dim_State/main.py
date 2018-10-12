@@ -13,7 +13,7 @@ from tools.functions import load_config_data
 
 # Read program args
 parser = argparse.ArgumentParser()
-parser.add_argument('--config-file', default='car_racing')
+parser.add_argument('--config-file', default='car_racing', help='car_racing, cartpole')
 parser.add_argument('--exp-num', default='-1')
 args = parser.parse_args()
 
