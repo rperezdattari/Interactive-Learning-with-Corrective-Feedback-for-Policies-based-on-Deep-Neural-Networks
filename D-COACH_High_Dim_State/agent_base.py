@@ -6,9 +6,11 @@ import os
 
 class AgentBase:
     def __init__(self, dim_a=3, policy_loc='./racing_car_m2/network',
-                 action_upper_limits='1,1', action_lower_limits='-1,-1', e='1'):
+                 action_upper_limits='1,1', action_lower_limits='-1,-1',
+                 e='1', load_policy=False, **kwargs):
+
         # Initialize variables
-        self.observation = None
+        self.high_dim_observation = None
         self.low_dim_observation = None
         self.y_label = None
         self.e = np.array(str_2_array(e, type_n='float'))
@@ -19,6 +21,12 @@ class AgentBase:
         self.action_upper_limits = str_2_array(action_upper_limits)
         self.action_lower_limits = str_2_array(action_lower_limits)
 
+        # Build and load network if requested
+        self._build_network(dim_a, kwargs)
+
+        if load_policy:
+            self._load_network()
+
     def _build_network(self, *args):
         with tf.variable_scope('base'):
             self.y = None
@@ -27,14 +35,17 @@ class AgentBase:
         self.sess = None
         self.saver = None
 
+        print('\nNetwork builder not implemented!\n')
+        exit()
+
     def _load_network(self):
             self.saver.restore(self.sess, self.policy_loc)
 
-    def _encode_observation(self, observation):
-        pass
+    def _preprocess_observation(self, observation):
+        self.low_dim_observation = observation  # if observation is low-dimensional no preprocess is needed
 
     def update(self, h, observation):
-        self._encode_observation(observation)
+        self._preprocess_observation(observation)
 
         action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
 
@@ -59,7 +70,7 @@ class AgentBase:
                                                   'base/label:0': y_label_batch})
 
     def action(self, observation):
-        self._encode_observation(observation)
+        self._preprocess_observation(observation)
 
         action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
         out_action = []
