@@ -42,7 +42,7 @@ class AgentBase:
             self.saver.restore(self.sess, self.policy_loc)
 
     def _preprocess_observation(self, observation):
-        self.low_dim_observation = observation  # if observation is low-dimensional no preprocess is needed
+        pass
 
     def update(self, h, observation):
         self._preprocess_observation(observation)

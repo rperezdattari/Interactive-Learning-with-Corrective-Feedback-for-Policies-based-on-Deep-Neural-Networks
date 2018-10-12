@@ -11,16 +11,16 @@ class Agent(AgentBase):
         super(Agent, self).__init__(dim_a=dim_a, policy_loc=policy_loc, action_upper_limits=action_upper_limits,
                                     action_lower_limits=action_lower_limits, e=e, load_policy=load_policy,
                                     loss_function_type=loss_function_type, learning_rate=learning_rate,
-                                    fc_layers_neurons=fc_layers_neurons, dim_state=dim_state)
+                                    fc_layers_neurons=fc_layers_neurons, low_dim_input_shape=dim_state)
 
-        self.dim_state = dim_state
+        self.low_dim_input_shape = dim_state
 
     def _build_network(self, dim_a, params):
         with tf.variable_scope('base'):
             self.y_ = tf.placeholder(tf.float32, [None, dim_a])
 
             # input data
-            self.input = tf.placeholder(tf.float32, [None, params['dim_state']], name='input')
+            self.input = tf.placeholder(tf.float32, [None, params['low_dim_input_shape']], name='input')
             self.x = tf.layers.dense(self.input, params['fc_layers_neurons'])
             self.x = tf.nn.relu(self.x)
             self.x = tf.layers.dense(self.x, params['fc_layers_neurons'])
@@ -46,5 +46,5 @@ class Agent(AgentBase):
         self.saver = tf.train.Saver()
 
     def _preprocess_observation(self, observation):
-        self.low_dim_observation = np.reshape(observation, [-1, self.dim_state])
+        self.low_dim_observation = np.reshape(observation, [-1, self.low_dim_input_shape])
 
