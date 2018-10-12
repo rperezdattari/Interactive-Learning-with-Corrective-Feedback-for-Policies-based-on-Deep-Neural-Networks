@@ -21,4 +21,4 @@ def agent_selector(network, train_ae, load_policy, learning_rate, dim_a, fc_laye
                   action_upper_limits=action_upper_limits, action_lower_limits=action_lower_limits, e=e,
                   dim_state=config_graph.getint('dim_state'))
     else:
-        raise NameError('The selected agent is not valid. Try using: NN or linear_RBFs')
+        raise NameError('Not valid network.')

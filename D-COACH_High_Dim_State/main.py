@@ -6,7 +6,7 @@ import os
 from memory_buffer import MemoryBuffer
 from feedback import Feedback
 from agents.selector import agent_selector
-from simulated_teacher.HD_teacher import Teacher
+from simulated_teacher.selector import teacher_selector
 from tools.functions import load_config_data
 
 
@@ -67,19 +67,20 @@ env = gym.make(environment)
 
 # Create teacher
 if use_simulated_teacher:
-    teacher = Teacher(image_size=config_teacher.getint('image_side_length'),
-                      dim_a=config_teacher.getint('dim_a'),
-                      action_lower_limits=config_teacher['action_lower_limits'],
-                      action_upper_limits=config_teacher['action_upper_limits'],
-                      loc=config_teacher['loc'],
-                      error_prob=error_prob,
-                      resize_observation=config_general.getboolean('resize_observation'),
-                      teacher_parameters=config_general['simulated_teacher_parameters'])
+    teacher = teacher_selector(network,
+                               dim_a=config_teacher.getint('dim_a'),
+                               action_lower_limits=config_teacher['action_lower_limits'],
+                               action_upper_limits=config_teacher['action_upper_limits'],
+                               loc=config_teacher['loc'],
+                               error_prob=error_prob,
+                               teacher_parameters=config_general['simulated_teacher_parameters'],
+                               config_general=config_general,
+                               config_teacher=config_teacher)
 
 # Create agent
 agent = agent_selector(network,
                        train_ae=config_graph.getboolean('train_autoencoder'),
-                       load_policy=config_graph.getboolean('load'),
+                       load_policy=config_exp_setup.getboolean('load_graph'),
                        learning_rate=float(config_graph['learning_rate']),
                        dim_a=config_graph.getint('dim_a'),
                        fc_layers_neurons=config_graph.getint('fc_layers_neurons'),
