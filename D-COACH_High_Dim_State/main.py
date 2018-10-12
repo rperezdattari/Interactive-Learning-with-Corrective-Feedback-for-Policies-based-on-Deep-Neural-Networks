@@ -3,11 +3,10 @@ import numpy as np
 import time
 import argparse
 import os
-import sys
 from memory_buffer import MemoryBuffer
 from feedback import Feedback
 from agents.selector import agent_selector
-from teacher import Teacher
+from simulated_teacher.HD_teacher import Teacher
 from tools.functions import load_config_data
 
 
@@ -73,7 +72,6 @@ if use_simulated_teacher:
                       action_lower_limits=config_teacher['action_lower_limits'],
                       action_upper_limits=config_teacher['action_upper_limits'],
                       loc=config_teacher['loc'],
-                      exp=exp_num,
                       error_prob=error_prob,
                       resize_observation=config_general.getboolean('resize_observation'),
                       teacher_parameters=config_general['simulated_teacher_parameters'])
