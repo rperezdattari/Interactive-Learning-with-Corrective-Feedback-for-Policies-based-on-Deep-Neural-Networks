@@ -8,7 +8,7 @@ This code is based on the following publication:
 
 Link to paper video:
 
-[![Paper Video](https://www.youtube.com/watch?v=vcEtuRrRIe4)
+[![Paper Video](https://img.youtube.com/vi/vcEtuRrRIe4/0.jpg)[https://www.youtube.com/watch?v=vcEtuRrRIe4]
 
 ## Installation
 
