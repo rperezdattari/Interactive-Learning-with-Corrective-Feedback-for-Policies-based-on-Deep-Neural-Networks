@@ -32,7 +32,7 @@ Then, the files in the `gym` folder of this repository should be replaced/added 
 
 To run the code just type in the terminal inside the folder `D-COACH`:
 
-```python 
+```bash 
 python main.py --config-file <environment>
 ```
 To be able to give feedback to the agent, the environment rendering window must be selected/clicked.
