@@ -10,11 +10,11 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
-import pygame # Dattari
+import pygame 
 
 logger = logging.getLogger(__name__)
 
-class CartPoleEnv(gym.Env):
+class ContinuousCartPoleEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second' : 50
@@ -23,27 +23,25 @@ class CartPoleEnv(gym.Env):
     def __init__(self):
         self.righ_key_pressed = False
         self.left_key_pressed = False
-        self.key = -1 # Dattari
-        self.video_size = 200, 200 # Dattari
-        self.screen = pygame.display.set_mode(self.video_size) # Dattari
-        self.clock = pygame.time.Clock() # Dattari
-        self.fps = 50 # Dattari
-        self.min_action = -1.0 #Dattari
-        self.max_action = 1.0 #Dattari
-        self.h = 0 #Dattari: human correction (reward)
+        self.key = -1 
+        self.video_size = 200, 200 
+        self.screen = pygame.display.set_mode(self.video_size) 
+        self.clock = pygame.time.Clock() 
+        self.fps = 50 
+        self.min_action = -1.0 
+        self.max_action = 1.0 
+        self.h = 0  # Human correction (reward)
         self.gravity = 9.8
         self.masscart = 1.0
         self.masspole = 0.1
         self.total_mass = (self.masspole + self.masscart)
-        self.length = 0.5 # actually half the pole's length
+        self.length = 0.5  # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
-        #self.force_mag = 10.0
-        self.force_mag = 10.0 #Dattari
+        self.force_mag = 10.0
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
-        #self.theta_threshold_radians = 12 * 2 * math.pi / 360
-        self.theta_threshold_radians = 40 * 2 * math.pi / 360 #Dattari
+        self.theta_threshold_radians = 40 * 2 * math.pi / 360  
         self.x_threshold = 2.4
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
@@ -53,8 +51,7 @@ class CartPoleEnv(gym.Env):
             self.theta_threshold_radians * 2,
             np.finfo(np.float32).max])
 
-        #self.action_space = spaces.Discrete(2)
-        self.action_space = spaces.Box(self.min_action, self.max_action, shape = (1,)) #Dattari
+        self.action_space = spaces.Box(self.min_action, self.max_action, shape = (1,)) 
         self.observation_space = spaces.Box(-high, high)
 
         self._seed()
@@ -71,8 +68,7 @@ class CartPoleEnv(gym.Env):
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         state = self.state
         x, x_dot, theta, theta_dot = state
-        #force = self.force_mag if action==1 else -self.force_mag
-        force = self.force_mag * action # Dattari: continuous force
+        force = self.force_mag * action # Continuous force
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
         temp = (force + self.polemass_length * theta_dot * theta_dot * sintheta) / self.total_mass
@@ -100,15 +96,14 @@ class CartPoleEnv(gym.Env):
                 logger.warning("You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
             self.steps_beyond_done += 1
             reward = 0.0
-        reward = self.h # Dattari: patch
-        return np.array(self.state), reward, done, {}
+        return np.array(self.state), np.array([self.h, reward]), done, {}  # Now return human feedback and reward value
 
     def _reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
         self.steps_beyond_done = None
         return np.array(self.state)
 
-    ### Dattari: capture key from keyboard for COACH correction
+    # Capture key from keyboard for COACH correction
     def capture_key(self):
         # process pygame events
         for event in pygame.event.get():
@@ -137,7 +132,6 @@ class CartPoleEnv(gym.Env):
         pygame.display.flip()
         self.clock.tick(self.fps)
         return -1
-    ###
 
     def get_feedback(self):
         return self.h
@@ -167,7 +161,7 @@ class CartPoleEnv(gym.Env):
             axleoffset =cartheight/4.0
             cart = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
 
-            ### Dattari: generate right and left arrows
+            ### Generate right and left arrows when COACH correction received
             rightarrow = rendering.FilledPolygon([(l/2,b/1.5), (l/2,t/1.5), (r,(t/1.5+b/1.5)/2)])
             self.rightarrowtrans = rendering.Transform()
             rightarrow.add_attr(self.rightarrowtrans)
@@ -207,7 +201,7 @@ class CartPoleEnv(gym.Env):
         x = self.state
         cartx = x[0]*scale+screen_width/2.0 # MIDDLE OF CART
 
-        ### Dattari: capture key and show arrow in canvas       
+        ##: capture key and show arrow in canvas       
         self.key = self.capture_key()
 
         if self.key == 'rightkeyup':

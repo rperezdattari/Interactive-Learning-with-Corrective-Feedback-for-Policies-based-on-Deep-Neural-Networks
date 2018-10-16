@@ -39,7 +39,7 @@ from pyglet import gl
 #
 # Created by Oleg Klimov. Licensed on the same terms as the rest of OpenAI Gym.
 
-STATE_W = 96  # less than Atari 160x192
+STATE_W = 96   # less than Atari 160x192
 STATE_H = 96
 VIDEO_W = 600
 VIDEO_H = 400
@@ -50,7 +50,7 @@ SCALE       = 6.0        # Track scale
 TRACK_RAD   = 900/SCALE  # Track is heavily morphed circle with this radius
 PLAYFIELD   = 2000/SCALE # Game over boundary
 FPS         = 50
-ZOOM        = 2.7        # Camera zoom 2.7 classic / 2.0
+ZOOM        = 2.7        # Camera zoom
 ZOOM_FOLLOW = True       # Set to False for fixed view (don't use zoom)
 
 
@@ -60,7 +60,6 @@ TRACK_WIDTH = 40/SCALE
 BORDER = 8/SCALE
 BORDER_MIN_COUNT = 4
 
-ROAD_COLOR = [0.4, 0.4, 0.4]
 ROAD_COLOR = [0.4, 0.4, 0.4]
 
 class FrictionDetector(contactListener):
@@ -106,7 +105,7 @@ class CarRacing(gym.Env):
     }
 
     def __init__(self):
-        self._seed()
+        self.seed()
         self.contactListener_keepref = FrictionDetector(self)
         self.world = Box2D.b2World((0,0), contactListener=self.contactListener_keepref)
         self.viewer = None
@@ -117,15 +116,12 @@ class CarRacing(gym.Env):
         self.reward = 0.0
         self.prev_reward = 0.0
         self.first = True
-        self.tiles_visited_ind = 0
-        self.prev_visited_tile = 0
 
         self.action_space = spaces.Box( np.array([-1,0,0]), np.array([+1,+1,+1]))  # steer, gas, brake
-        self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_H, STATE_W, 3))
+        self.observation_space = spaces.Box(low=0, high=255, shape=(STATE_H, STATE_W, 3), dtype=np.uint8)
 
-    def _seed(self, seed=None):
+    def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
-        print('seed:', self.np_random, seed)
         return [seed]
 
     def _destroy(self):
@@ -152,7 +148,7 @@ class CarRacing(gym.Env):
                 rad = 1.5*TRACK_RAD
             checkpoints.append( (alpha, rad*math.cos(alpha), rad*math.sin(alpha)) )
 
-        #print("\n".join(str(h) for h in checkpoints))
+        #print "\n".join(str(h) for h in checkpoints)
         #self.road_poly = [ (    # uncomment this to see checkpoints
         #    [ (tx,ty) for a,tx,ty in checkpoints ],
         #    (0.7,0.7,0.9) ) ]
@@ -279,7 +275,7 @@ class CarRacing(gym.Env):
         self.track = track
         return True
 
-    def _reset(self):
+    def reset(self):
         self._destroy()
         self.reward = 0.0
         self.prev_reward = 0.0
@@ -294,9 +290,9 @@ class CarRacing(gym.Env):
             print("retry to generate track (normal if there are not many of this messages)")
         self.car = Car(self.world, *self.track[0][1:4])
 
-        return self._step(None)[0]
+        return self.step(None)[0]
 
-    def _step(self, action):
+    def step(self, action):
         if action is not None:
             self.car.steer(-action[0])
             self.car.gas(action[1])
@@ -306,7 +302,7 @@ class CarRacing(gym.Env):
         self.world.Step(1.0/FPS, 6*30, 2*30)
         self.t += 1.0/FPS
 
-        self.state = self._render("state_pixels")
+        self.state = self.render("state_pixels")
 
         step_reward = 0
         done = False
@@ -317,14 +313,6 @@ class CarRacing(gym.Env):
             self.car.fuel_spent = 0.0
             step_reward = self.reward - self.prev_reward
             self.prev_reward = self.reward
-
-            if self.tile_visited_count == self.prev_visited_tile:
-                self.tiles_visited_ind = self.tiles_visited_ind + 1
-            else: 
-                self.tiles_visited_ind = 0
-            self.prev_visited_tile = self.tile_visited_count
-            if self.tiles_visited_ind == 100:
-                done = True
             if self.tile_visited_count==len(self.track):
                 done = True
             x, y = self.car.hull.position
@@ -334,13 +322,7 @@ class CarRacing(gym.Env):
 
         return self.state, step_reward, done, {}
 
-    def _render(self, mode='human', close=False):
-        if close:
-            if self.viewer is not None:
-                self.viewer.close()
-                self.viewer = None
-            return
-
+    def render(self, mode='human'):
         if self.viewer is None:
             from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(WINDOW_W, WINDOW_H)
@@ -385,11 +367,11 @@ class CarRacing(gym.Env):
                 VP_H = STATE_H
             gl.glViewport(0, 0, VP_W, VP_H)
             t.enable()
-            self._render_road()
+            self.render_road()
             for geom in self.viewer.onetime_geoms:
                 geom.render()
             t.disable()
-            self._render_indicators(WINDOW_W, WINDOW_H)  # TODO: find why 2x needed, wtf
+            self.render_indicators(WINDOW_W, WINDOW_H)  # TODO: find why 2x needed, wtf
             image_data = pyglet.image.get_buffer_manager().get_color_buffer().get_image_data()
             arr = np.fromstring(image_data.data, dtype=np.uint8, sep='')
             arr = arr.reshape(VP_H, VP_W, 4)
@@ -404,18 +386,22 @@ class CarRacing(gym.Env):
             t = self.transform
             gl.glViewport(0, 0, WINDOW_W, WINDOW_H)
             t.enable()
-            self._render_road()
+            self.render_road()
             for geom in self.viewer.onetime_geoms:
                 geom.render()
             t.disable()
-            self._render_indicators(WINDOW_W, WINDOW_H)
+            self.render_indicators(WINDOW_W, WINDOW_H)
             win.flip()
 
         self.viewer.onetime_geoms = []
-
         return arr
 
-    def _render_road(self):
+    def close(self):
+        if self.viewer is not None:
+            self.viewer.close()
+            self.viewer = None
+
+    def render_road(self):
         gl.glBegin(gl.GL_QUADS)
         gl.glColor4f(0.4, 0.8, 0.4, 1.0)
         gl.glVertex3f(-PLAYFIELD, +PLAYFIELD, 0)
@@ -436,7 +422,7 @@ class CarRacing(gym.Env):
                 gl.glVertex3f(p[0], p[1], 0)
         gl.glEnd()
 
-    def _render_indicators(self, W, H):
+    def render_indicators(self, W, H):
         gl.glBegin(gl.GL_QUADS)
         s = W/40.0
         h = H/40.0
@@ -458,7 +444,6 @@ class CarRacing(gym.Env):
             gl.glVertex3f((place+val)*s, 2*h, 0)
             gl.glVertex3f((place+0)*s, 2*h, 0)
         true_speed = np.sqrt(np.square(self.car.hull.linearVelocity[0]) + np.square(self.car.hull.linearVelocity[1]))
-        #horiz_ind(5, 0.08*true_speed, (1,1,1))
         vertical_ind(5, 0.02*true_speed, (1,1,1))
         vertical_ind(7, 0.01*self.car.wheels[0].omega, (0.0,0,1)) # ABS sensors
         vertical_ind(8, 0.01*self.car.wheels[1].omega, (0.0,0,1))
@@ -486,38 +471,30 @@ if __name__=="__main__":
         if k==key.RIGHT and a[0]==+1.0: a[0] = 0
         if k==key.UP:    a[1] = 0
         if k==key.DOWN:  a[2] = 0
-    #env = CarRacing()
-    env = gym.make('CarRacing-v0')
+    env = CarRacing()
     env.render()
     record_video = False
     if record_video:
         env.monitor.start('/tmp/video-test', force=True)
-    env.unwrapped.viewer.window.on_key_press = key_press
-    env.unwrapped.viewer.window.on_key_release = key_release
+    env.viewer.window.on_key_press = key_press
+    env.viewer.window.on_key_release = key_release
 
     import numpy as np
     database = []
     save_n = 0
-    #database = np.load('racing_car_database.npy')
-    #save_n = database[:, 0, 0, 0].shape[0]
     while True:
         env.reset()
         total_reward = 0.0
         steps = 0
         restart = False
-        switch = 1
         while True:
             s, r, done, info = env.step(a)
             total_reward += r
             if save_n % 100 == 0 and save_n != 0 and (steps % 2 == 0 or done):
                 print(str(save_n) + ' images imported...')
                 np.save('racing_car_database', database)
-                #del database
-                #database = np.load('racing_car_database.npy')
                 print(np.shape(database))
             if steps % 2 == 0 or done and False:
-                #print("\naction " + str(["{:+0.2f}".format(x) for x in a]))
-                #print("step {} total_reward {:+0.2f}".format(steps, total_reward))
                 image = np.expand_dims(s, axis=0)
                 database.append(image)
                 save_n += 1

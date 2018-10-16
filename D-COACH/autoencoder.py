@@ -1,5 +1,4 @@
 from __future__ import division, print_function, absolute_import
-import tensorflow.contrib.layers as lays
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,18 +6,20 @@ from models import autoencoder
 
 
 class TrainAE:
-    """Class in charge of training and showing the performance of the autoencoder."""
+    """Training and showing the performance of the autoencoder."""
     def __init__(self):
         self.batch_size = 100  # Number of samples in each batch
-        self.epoch_num = 20     # Number of epochs to train the network
+        self.epoch_num = 20    # Number of epochs to train the network
         self.lr = 0.001        # Learning rate
+        self.image_size = 64
         self.train_AE = True
         self.use_pre_trained_weights = False
-        self.save_graph = True
+        self.save_graph = False
         self.graph_loc = 'graphs/autoencoder/conv_layers_64x64'
         self.database = np.load('racing_car_classic_database_64x64.npy')
+        self.database_length = self.database.shape[0]
 
-    def next_batch(self, database, batch_size):
+    def _next_batch(self, database, batch_size):
         batch = database[np.random.choice(len(database), size=batch_size, replace=False)]
         batch = np.mean(batch, axis=3)
         for k in range(len(batch)):
@@ -26,13 +27,12 @@ class TrainAE:
         return batch
 
     def run(self, train=True, show_performance=True):
-        # calculate the number of batches per epoch
-        batch_per_ep = 12000 // self.batch_size
+        batch_per_ep = self.database.shape[0] // self.batch_size  # calculate the number of batches per epoch
         graph = tf.Graph()
         sess = tf.Session(graph=graph)
 
         with graph.as_default():
-            loss, train_op, ae_inputs, ae_output = autoencoder(self.lr)  # create the Autoencoder network
+            loss, train_op, ae_inputs, ae_output = autoencoder(self.lr)  # create the network
             init = tf.global_variables_initializer()
             saver = tf.train.Saver()
             sess.run(init)
@@ -43,19 +43,19 @@ class TrainAE:
             if train:
                 for ep in range(self.epoch_num):  # epochs loop
                     for batch_n in range(batch_per_ep):  # batches loop
-                        batch_img = self.next_batch(self.database, self.batch_size)  # read a batch
-                        batch_img = batch_img.reshape((-1, 64, 64, 1))               # reshape each sample to an (96, 96) image
+                        batch_img = self._next_batch(self.database, self.batch_size)  # read a batch
+                        batch_img = batch_img.reshape((-1, self.image_size, self.image_size, 1))
                         _, c, outputs = sess.run([train_op, loss, ae_output], feed_dict={ae_inputs: batch_img})
                         print('Epoch: {} - cost= {:.5f}'.format((ep + 1), c))
-                        print('Batch progress:', batch_n/batch_per_ep * 100, '%')
+                        print('Batch progress:', '%.3f' % (batch_n/batch_per_ep * 100), '%')
 
                         if self.save_graph:
                             saver.save(sess, self.graph_loc + 'new')
 
             if show_performance:
                 # test the trained network
-                batch_img = self.next_batch(self.database, self.batch_size)  # read a batch
-                batch_img = batch_img.reshape((-1, 64, 64, 1))  # reshape each sample to an (28, 28) image
+                batch_img = self._next_batch(self.database, self.batch_size)  # read a batch
+                batch_img = batch_img.reshape((-1, self.image_size, self.image_size, 1))
                 recon_img = sess.run([ae_output], feed_dict={ae_inputs: batch_img})[0]
 
                 # plot the reconstructed images and their ground truths (inputs)
@@ -73,7 +73,7 @@ class TrainAE:
 
 
 class AE:
-    """Class in charge of importing the trained weights of the
+    """Importing the trained weights of the
     autoencoder with its corresponding graph and evaluate it."""
     def __init__(self, ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64'):
         self.graph = tf.Graph()
