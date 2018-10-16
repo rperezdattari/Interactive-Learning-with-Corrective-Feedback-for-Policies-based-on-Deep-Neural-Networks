@@ -8,7 +8,7 @@ This code is based on the following publication:
 
 Link to paper video:
 
-[![Paper Video](https://img.youtube.com/vi/vcEtuRrRIe4/0.jpg)[https://www.youtube.com/watch?v=vcEtuRrRIe4]
+[![Paper Video](https://img.youtube.com/vi/vcEtuRrRIe4/0.jpg)](https://www.youtube.com/watch?v=vcEtuRrRIe4)
 
 ## Installation
 
@@ -17,6 +17,7 @@ To use the code, it is necessary to first install the gym toolkit (release v0.9.
 Then, the files in the `gym` folder of this repository should be replaced/added in the installed gym folder on your PC. There are modifications of two gym environments:
 
 1. **Continuous-CartPole:** a continuous-action version of the Gym CartPole environment.
+
 2. **CarRacing:** the same CarRacing environment of Gym with some bug fixes and modifications in the main loop for database generation.
 
 ### Requirements
@@ -30,12 +31,27 @@ Then, the files in the `gym` folder of this repository should be replaced/added 
 
 ## Usage
 
-To run the code just type in the terminal inside the folder `D-COACH`:
+1. To run the main program type in the terminal (inside the folder `D-COACH`):
 
 ```bash 
 python main.py --config-file <environment>
 ```
+The default configuration files are **car_racing** and **cartpole**.
+
 To be able to give feedback to the agent, the environment rendering window must be selected/clicked.
+
+To train the autoencoder for the high-dimensional state environments run (inside the folder `D-COACH`):
+
+```bash 
+python main.py autoencoder
+```
+2. To generate a database for the CarRacing environment run the (replaced) file `car_racing.py` in the downloaded gym repository.
+
+To modify the dimension of the images in the generated database, this database must be in the folder `D-COACH` and from this folder run:
+
+```bash 
+python tools/transform_database_dim.py
+```
 
 ## Comments
 
