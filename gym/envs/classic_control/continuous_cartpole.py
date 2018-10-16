@@ -4,15 +4,11 @@ Copied from http://incompleteideas.net/sutton/book/code/pole.c
 permalink: https://perma.cc/C9ZM-652R
 """
 
-import logging
 import math
 import gym
-from gym import spaces
+from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
-import pygame 
-
-logger = logging.getLogger(__name__)
 
 class ContinuousCartPoleEnv(gym.Env):
     metadata = {
@@ -21,16 +17,8 @@ class ContinuousCartPoleEnv(gym.Env):
     }
 
     def __init__(self):
-        self.righ_key_pressed = False
-        self.left_key_pressed = False
-        self.key = -1 
-        self.video_size = 200, 200 
-        self.screen = pygame.display.set_mode(self.video_size) 
-        self.clock = pygame.time.Clock() 
-        self.fps = 50 
         self.min_action = -1.0 
         self.max_action = 1.0 
-        self.h = 0  # Human correction (reward)
         self.gravity = 9.8
         self.masscart = 1.0
         self.masspole = 0.1
@@ -41,7 +29,7 @@ class ContinuousCartPoleEnv(gym.Env):
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
-        self.theta_threshold_radians = 40 * 2 * math.pi / 360  
+        self.theta_threshold_radians = 12 * 2 * math.pi / 360
         self.x_threshold = 2.4
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
@@ -54,17 +42,17 @@ class ContinuousCartPoleEnv(gym.Env):
         self.action_space = spaces.Box(self.min_action, self.max_action, shape = (1,)) 
         self.observation_space = spaces.Box(-high, high)
 
-        self._seed()
+        self.seed()
         self.viewer = None
         self.state = None
 
         self.steps_beyond_done = None
 
-    def _seed(self, seed=None):
+    def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def _step(self, action):
+    def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         state = self.state
         x, x_dot, theta, theta_dot = state
@@ -93,56 +81,18 @@ class ContinuousCartPoleEnv(gym.Env):
             reward = 1.0
         else:
             if self.steps_beyond_done == 0:
-                logger.warning("You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
+                logger.warn("You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
             self.steps_beyond_done += 1
             reward = 0.0
-        return np.array(self.state), np.array([self.h, reward]), done, {}  # Now return human feedback and reward value
 
-    def _reset(self):
+        return np.array(self.state), reward, done, {}
+
+    def reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
         self.steps_beyond_done = None
         return np.array(self.state)
 
-    # Capture key from keyboard for COACH correction
-    def capture_key(self):
-        # process pygame events
-        for event in pygame.event.get():
-            # test events, set key states
-            if event.type == pygame.KEYDOWN:
-                if(event.key == 275):
-                    pygame.display.flip()
-                    self.clock.tick(self.fps)
-                    #print('right key pressed', event.key)
-                    return 'rightkeydown'
-                elif(event.key == 276):
-                    pygame.display.flip()
-                    self.clock.tick(self.fps)
-                    #print('left key pressed', event.key)
-                    return 'leftkeydown'
-            if event.type == pygame.KEYUP:
-                if(event.key == 275):
-                    pygame.display.flip()
-                    self.clock.tick(self.fps)
-                    return 'rightkeyup'
-                elif(event.key == 276):
-                    pygame.display.flip()
-                    self.clock.tick(self.fps)
-                    return 'leftkeyup'
-
-        pygame.display.flip()
-        self.clock.tick(self.fps)
-        return -1
-
-    def get_feedback(self):
-        return self.h
-
-    def _render(self, mode='human', close=False):
-        if close:
-            if self.viewer is not None:
-                self.viewer.close()
-                self.viewer = None
-            return
-
+    def render(self, mode='human'):
         screen_width = 600
         screen_height = 400
 
@@ -160,23 +110,6 @@ class ContinuousCartPoleEnv(gym.Env):
             l,r,t,b = -cartwidth/2, cartwidth/2, cartheight/2, -cartheight/2
             axleoffset =cartheight/4.0
             cart = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
-
-            ### Generate right and left arrows when COACH correction received
-            rightarrow = rendering.FilledPolygon([(l/2,b/1.5), (l/2,t/1.5), (r,(t/1.5+b/1.5)/2)])
-            self.rightarrowtrans = rendering.Transform()
-            rightarrow.add_attr(self.rightarrowtrans)
-            rightarrow.set_color(0.2,0.4,0.8)
-            self.viewer.add_geom(rightarrow)
-            self.rightarrowtrans.set_translation(1000, 1000)
-
-            leftarrow = rendering.FilledPolygon([(r+l/2,b/1.5), (r+l/2,t/1.5), (-r,(t/1.5+b/1.5)/2)])
-            self.leftarrowtrans = rendering.Transform()
-            leftarrow.add_attr(self.leftarrowtrans)
-            leftarrow.set_color(0.2,0.4,0.8)
-            self.viewer.add_geom(leftarrow)
-            self.leftarrowtrans.set_translation(1000, 1000)
-            ###
-
             self.carttrans = rendering.Transform()
             cart.add_attr(self.carttrans)
             self.viewer.add_geom(cart)
@@ -200,37 +133,10 @@ class ContinuousCartPoleEnv(gym.Env):
 
         x = self.state
         cartx = x[0]*scale+screen_width/2.0 # MIDDLE OF CART
-
-        ##: capture key and show arrow in canvas       
-        self.key = self.capture_key()
-
-        if self.key == 'rightkeyup':
-            self.righ_key_pressed = False
-            self.rightarrowtrans.set_translation(1000, 1000)
-            self.h = 0
-        if self.key == 'leftkeyup':
-            self.left_key_pressed = False
-            self.leftarrowtrans.set_translation(1000, 1000)
-            self.h = 0
-        if self.righ_key_pressed:
-            self.rightarrowtrans.set_translation(cartx+40, carty+30)
-            self.h = 1
-        if self.left_key_pressed:
-            self.leftarrowtrans.set_translation(cartx-40, carty+30)
-            self.h = -1
-        if self.key == 'rightkeydown':
-            self.righ_key_pressed = True
-            self.h = 1 # go right
-            self.rightarrowtrans.set_translation(cartx+40, carty+30)
-            self.leftarrowtrans.set_translation(1000, 1000)
-        if self.key == 'leftkeydown':
-            self.left_key_pressed = True
-            self.h = -1 # go left
-            self.leftarrowtrans.set_translation(cartx-40, carty+30)
-            self.rightarrowtrans.set_translation(1000, 1000)             
-        ###
-
         self.carttrans.set_translation(cartx, carty)
         self.poletrans.set_rotation(-x[2])
-        
+
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
+
+    def close(self):
+        if self.viewer: self.viewer.close()
