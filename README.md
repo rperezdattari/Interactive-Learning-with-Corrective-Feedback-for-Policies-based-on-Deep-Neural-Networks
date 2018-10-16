@@ -20,6 +20,9 @@ Then, the files in the `gym` folder of this repository should be replaced/added 
 
 2. **CarRacing:** the same CarRacing environment of Gym with some bug fixes and modifications in the main loop for database generation.
 
+To download and install some pretrained networks (CarRacing autoencoder, CarRacing simulated teacher, CartPole simulated teacher) and a CarRacing database for training the autoencoder run (inside the folder `D-COACH`):
+
+
 ### Requirements
 * setuptools==38.5.1
 * numpy==1.13.3
@@ -58,4 +61,8 @@ python tools/transform_database_dim.py
 The D-COACH algorithm is designed to work with problems of continuous actions spaces. Given that the Cartpole environment of gym was designed to work with discret action spaces, a modified continuous version of this environment is used.
 
 This code has been tested in `Ubuntu 16.04` and `python >= 3.5`.
+
+## Troubleshooting
+
+If you run into problems of any kind, don't hesitate to [open an issue](https://github.com/rperezdattari/Interactive-Learning-with-Corrective-Feedback-for-Policies-based-on-Deep-Neural-Networks/issues) on this repository. It is quite possible that you have run into some bug we are not aware of.
 
