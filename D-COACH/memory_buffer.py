@@ -1,6 +1,6 @@
 import random
 
-"""Base code of this file extracted from: https://github.com/fhennecker/deepdoom/blob/master/src/memory.py"""
+"""Code inspired in: https://github.com/fhennecker/deepdoom/blob/master/src/memory.py"""
 
 
 class MemoryBuffer:
