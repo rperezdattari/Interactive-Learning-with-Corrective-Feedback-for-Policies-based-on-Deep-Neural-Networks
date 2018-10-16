@@ -22,6 +22,9 @@ Then, the files in the `gym` folder of this repository should be replaced/added 
 
 To download and install some pretrained networks (CarRacing autoencoder, CarRacing simulated teacher, CartPole simulated teacher) and a CarRacing database for training the autoencoder run (inside the folder `D-COACH`):
 
+```bash 
+sh install_comp_files.sh
+```
 
 ### Requirements
 * setuptools==38.5.1
@@ -58,9 +61,11 @@ python tools/transform_database_dim.py
 
 ## Comments
 
-The D-COACH algorithm is designed to work with problems of continuous actions spaces. Given that the Cartpole environment of gym was designed to work with discret action spaces, a modified continuous version of this environment is used.
+The D-COACH algorithm is designed to work with problems of continuous actions spaces. Given that the Cartpole environment of gym was designed to work with discrete action spaces, a modified continuous version of this environment is used.
 
 This code has been tested in `Ubuntu 16.04` and `python >= 3.5`.
+
+Tests with the CartPole environment using the classic COACH algorithm can be done using the following repository: [COACH](https://github.com/rperezdattari/COACH-gym)
 
 ## Troubleshooting
 
