@@ -49,7 +49,7 @@ To be able to give feedback to the agent, the environment rendering window must 
 To train the autoencoder for the high-dimensional state environments run (inside the folder `D-COACH`):
 
 ```bash 
-python main.py autoencoder
+python autoencoder.py
 ```
 2. To generate a database for the CarRacing environment run the (replaced) file `car_racing.py` in the downloaded gym repository.
 
@@ -61,7 +61,7 @@ python tools/transform_database_dim.py
 
 ## Comments
 
-The D-COACH algorithm is designed to work with problems of continuous actions spaces. Given that the Cartpole environment of gym was designed to work with discrete action spaces, a modified continuous version of this environment is used.
+The D-COACH algorithm is designed to work with problems of continuous-action spaces. Given that the Cartpole environment of gym was designed to work with discrete action spaces, a modified continuous version of this environment is used.
 
 This code has been tested in `Ubuntu 16.04` and `python >= 3.5`.
 
