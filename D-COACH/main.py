@@ -172,10 +172,10 @@ for i_episode in range(max_num_of_episodes):
                         batch = buffer.sample(batch_size=config_buffer.getint('sampling_size'))
                         agent.batch_update(batch)
 
-                        # Train every k time steps
-                        if t % history_training_rate == 0:
-                            batch = buffer.sample(batch_size=config_buffer.getint('sampling_size'))
-                            agent.batch_update(batch)
+            # Train every k time steps
+            if buffer.initialized() and t % history_training_rate == 0:
+                batch = buffer.sample(batch_size=config_buffer.getint('sampling_size'))
+                agent.batch_update(batch)
 
         t_counter += 1
 
