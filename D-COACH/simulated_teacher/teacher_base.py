@@ -9,12 +9,12 @@ class TeacherBase:
                  loc='graphs/teacher/CarRacing-v0/network', error_prob=0, teacher_parameters='0.6,0.00001'):
 
         self.graph = tf.Graph()
-        self.sess = tf.Session(graph=self.graph)
+        self.sess = tf.compat.v1.Session(graph=self.graph)
         with self.graph.as_default():
-            self.saver = tf.train.import_meta_graph(loc + '.meta', clear_devices=True)
-            self.init = tf.global_variables_initializer()  # initialize the graph
-            self.sess = tf.Session()
-            self.saver = tf.train.Saver()
+            self.saver = tf.compat.v1.train.import_meta_graph(loc + '.meta', clear_devices=True)
+            self.init = tf.compat.v1.global_variables_initializer()  # initialize the graph
+            self.sess = tf.compat.v1.Session()
+            self.saver = tf.compat.v1.train.Saver()
             self.sess.run(self.init)
             self.saver.restore(self.sess, loc)
             self.action_out = self.graph.get_operation_by_name('base/action/Tanh').outputs[0]

@@ -8,7 +8,9 @@ from feedback import Feedback
 from agents.selector import agent_selector
 from simulated_teacher.selector import teacher_selector
 from tools.functions import load_config_data
+from tensorflow.python.framework.ops import disable_eager_execution
 
+disable_eager_execution()
 
 # Read program args
 parser = argparse.ArgumentParser()

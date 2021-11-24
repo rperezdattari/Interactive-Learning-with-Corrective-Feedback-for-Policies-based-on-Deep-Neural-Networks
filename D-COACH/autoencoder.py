@@ -29,12 +29,12 @@ class TrainAE:
     def run(self, train=True, show_performance=True):
         batch_per_ep = self.database.shape[0] // self.batch_size  # calculate the number of batches per epoch
         graph = tf.Graph()
-        sess = tf.Session(graph=graph)
+        sess = tf.compat.v1.Session(graph=graph)
 
         with graph.as_default():
             loss, train_op, ae_inputs, ae_output = autoencoder(self.lr)  # create the network
-            init = tf.global_variables_initializer()
-            saver = tf.train.Saver()
+            init = tf.compat.v1.global_variables_initializer()
+            saver = tf.compat.v1.train.Saver()
             sess.run(init)
 
             if self.use_pre_trained_weights:
@@ -77,12 +77,12 @@ class AE:
     autoencoder with its corresponding graph and evaluate it."""
     def __init__(self, ae_loc='graphs/autoencoder/CarRacing-v0/conv_layers_64x64'):
         self.graph = tf.Graph()
-        self.sess = tf.Session(graph=self.graph)
+        self.sess = tf.compat.v1.Session(graph=self.graph)
         with self.graph.as_default():
-            self.saver = tf.train.import_meta_graph(ae_loc + '.meta', clear_devices=True)
-            self.init = tf.global_variables_initializer()  # initialize the graph
-            self.sess = tf.Session()
-            self.saver = tf.train.Saver()
+            self.saver = tf.compat.v1.train.import_meta_graph(ae_loc + '.meta', clear_devices=True)
+            self.init = tf.compat.v1.global_variables_initializer()  # initialize the graph
+            self.sess = tf.compat.v1.Session()
+            self.saver = tf.compat.v1.train.Saver()
             self.sess.run(self.init)
             self.saver.restore(self.sess, ae_loc)
             self.latent_space = self.graph.get_operation_by_name('conv_part').outputs[0]

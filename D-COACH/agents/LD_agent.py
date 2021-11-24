@@ -17,24 +17,24 @@ class Agent(AgentBase):
         self.low_dim_input_shape = dim_state
 
     def _build_network(self, dim_a, params):
-        with tf.variable_scope('base'):
+        with tf.compat.v1.variable_scope('base'):
             # Input data
-            x = tf.placeholder(tf.float32, [None, params['low_dim_input_shape']], name='input')
+            x = tf.compat.v1.placeholder(tf.float32, [None, params['low_dim_input_shape']], name='input')
 
             # Build fully connected layers
             self.y, loss = fully_connected_layers(x, dim_a,
                                                   params['fc_layers_neurons'],
                                                   params['loss_function_type'])
 
-        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'base')
-        self.train_step = tf.train.GradientDescentOptimizer(
+        variables = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, 'base')
+        self.train_step = tf.compat.v1.train.GradientDescentOptimizer(
             learning_rate=params['learning_rate']).minimize(loss, var_list=variables)
 
         # Initialize tensorflow
-        init = tf.global_variables_initializer()
-        self.sess = tf.Session()
+        init = tf.compat.v1.global_variables_initializer()
+        self.sess = tf.compat.v1.Session()
         self.sess.run(init)
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
 
     def _preprocess_observation(self, observation):
         self.low_dim_observation = np.reshape(observation, [-1, self.low_dim_input_shape])

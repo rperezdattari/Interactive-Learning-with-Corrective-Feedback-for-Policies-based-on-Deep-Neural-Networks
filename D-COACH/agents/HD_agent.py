@@ -5,7 +5,7 @@ from models import fully_connected_layers
 from tools.functions import observation_to_gray, FastImagePlot
 from agents.agent_base import AgentBase
 import cv2
-
+import tf_slim as slim
 
 class Agent(AgentBase):
     def __init__(self, train_ae=True, load_policy=False, learning_rate=0.001,
@@ -34,7 +34,7 @@ class Agent(AgentBase):
                                                 image_size, 'Autoencoder Output', vmax=0.5)
 
     def _build_network(self, dim_a, params):
-        with tf.variable_scope('base'):
+        with tf.compat.v1.variable_scope('base'):
             # Initialize graph
             if params['train_ae']:
                 ae_trainer = TrainAE()
@@ -43,7 +43,8 @@ class Agent(AgentBase):
             self.AE = AE(ae_loc=params['ae_loc'])
             ae_encoder = self.AE.latent_space
             self.low_dim_input_shape = ae_encoder.get_shape()[1:]
-            self.low_dim_input = tf.placeholder(tf.float32, [None, self.low_dim_input_shape[0],
+            # self.low_dim_input_shape = (64,64,1)
+            self.low_dim_input = tf.compat.v1.placeholder(tf.float32, [None, self.low_dim_input_shape[0],
                                                              self.low_dim_input_shape[1],
                                                              self.low_dim_input_shape[2]],
                                                 name='input')
@@ -51,24 +52,25 @@ class Agent(AgentBase):
             self.low_dim_input = tf.identity(self.low_dim_input, name='low_dim_input')
 
             # Build fully connected layers
-            self.y, loss = fully_connected_layers(tf.contrib.layers.flatten(self.low_dim_input), dim_a,
+            self.y, loss = fully_connected_layers(slim.flatten(self.low_dim_input), dim_a,
                                                   params['fc_layers_neurons'],
                                                   params['loss_function_type'])
 
-        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'base')
-        self.train_step = tf.train.GradientDescentOptimizer(
+        variables = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, 'base')
+        self.train_step = tf.compat.v1.train.GradientDescentOptimizer(
             learning_rate=params['learning_rate']).minimize(loss, var_list=variables)
 
         # Initialize tensorflow
-        init = tf.global_variables_initializer()
-        self.sess = tf.Session()
+        init = tf.compat.v1.global_variables_initializer()
+        self.sess = tf.compat.v1.Session()
         self.sess.run(init)
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
 
     def _preprocess_observation(self, observation):
         if self.resize_observation:
             observation = cv2.resize(observation, (self.image_size, self.image_size))
         self.high_dim_observation = observation_to_gray(observation, self.image_size)
+        # self.low_dim_observation = observation_to_gray(observation, self.image_size)
         self.low_dim_observation = self.AE.conv_representation(self.high_dim_observation)  # obtain latent space from AE
 
     def time_step_info(self, t):

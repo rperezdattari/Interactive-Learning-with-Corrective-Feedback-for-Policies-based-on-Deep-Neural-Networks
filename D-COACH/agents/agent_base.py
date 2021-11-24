@@ -28,7 +28,7 @@ class AgentBase:
             self._load_network()
 
     def _build_network(self, *args):
-        with tf.variable_scope('base'):
+        with tf.compat.v1.variable_scope('base'):
             self.y = None
             self.low_dim_input_shape = None
         self.train_step = None
@@ -49,7 +49,10 @@ class AgentBase:
 
         action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
 
+        print(h, self.e, self.dim_a)
+        print(action)
         error = np.array(h * self.e).reshape(1, self.dim_a)
+        print(error)
         self.y_label = []
 
         for i in range(self.dim_a):
@@ -57,7 +60,10 @@ class AgentBase:
                                         self.action_lower_limits[i],
                                         self.action_upper_limits[i]))
 
+        print(self.y_label)
         self.y_label = np.array(self.y_label).reshape(1, self.dim_a)
+        print(self.y_label)
+        print('Done------------')
 
         self.sess.run(self.train_step, feed_dict={'base/input:0': self.low_dim_observation,
                                                   'base/label:0': self.y_label})
