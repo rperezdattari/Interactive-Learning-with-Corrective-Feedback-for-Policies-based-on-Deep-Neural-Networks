@@ -44,7 +44,7 @@ STATE_H = 96
 VIDEO_W = 600
 VIDEO_H = 400
 WINDOW_W = 1200
-WINDOW_H = 1000
+WINDOW_H = 600
 
 SCALE       = 6.0        # Track scale
 TRACK_RAD   = 900/SCALE  # Track is heavily morphed circle with this radius
@@ -320,7 +320,7 @@ class CarRacing(gym.Env):
                 done = True
                 step_reward = -100
 
-        return self.state, step_reward, done, {}
+        return self.state, step_reward, done, {'vel': self.car.hull.linearVelocity}
 
     def render(self, mode='human'):
         if self.viewer is None:

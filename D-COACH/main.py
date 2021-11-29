@@ -148,6 +148,9 @@ for i_episode in range(max_num_of_episodes):
         # Act
         observation, reward, done, info = env.step(action)
 
+        # print("main.py info", info)
+        # print("observation", observation)
+
         # Accumulate reward
         r += reward
 
@@ -173,6 +176,11 @@ for i_episode in range(max_num_of_episodes):
                     if buffer.initialized():
                         batch = buffer.sample(batch_size=config_buffer.getint('sampling_size'))
                         agent.batch_update(batch)
+            else:
+                #Brando added this.
+                agent.update_no_fb(observation)
+
+
 
             # Train every k time steps
             if buffer.initialized() and t % history_training_rate == 0:

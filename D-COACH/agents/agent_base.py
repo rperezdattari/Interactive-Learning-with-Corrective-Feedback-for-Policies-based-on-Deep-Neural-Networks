@@ -44,15 +44,24 @@ class AgentBase:
     def _preprocess_observation(self, observation):
         pass
 
+    def update_no_fb(self, observation):
+        self._preprocess_observation(observation)
+        action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
+        self.y_label = 0.5*action
+        self.sess.run(self.train_step, feed_dict={'base/input:0': self.low_dim_observation,
+                                                  'base/label:0': self.y_label})
+
+
+
     def update(self, h, observation):
         self._preprocess_observation(observation)
 
         action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
 
-        print(h, self.e, self.dim_a)
-        print(action)
+        # print('PRINTING H E DIM_A', h, self.e, self.dim_a)
+        # print("PRINTING ACTION", action)
         error = np.array(h * self.e).reshape(1, self.dim_a)
-        print(error)
+        # print('PRINTING ERROR', error)
         self.y_label = []
 
         for i in range(self.dim_a):
@@ -60,10 +69,11 @@ class AgentBase:
                                         self.action_lower_limits[i],
                                         self.action_upper_limits[i]))
 
-        print(self.y_label)
+        # y_label = action-0.2*acc
+        # print("PRINTING Y LABEL",self.y_label)
         self.y_label = np.array(self.y_label).reshape(1, self.dim_a)
-        print(self.y_label)
-        print('Done------------')
+        # print("Y label", self.y_label)
+        # print('Done------------')
 
         self.sess.run(self.train_step, feed_dict={'base/input:0': self.low_dim_observation,
                                                   'base/label:0': self.y_label})
