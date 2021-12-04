@@ -44,3 +44,25 @@ def fully_connected_layers(x, dim_a, fc_layers_neurons, loss_function_type):
         exit()
 
     return y, loss
+
+def fully_connected_layers_fnn(x, dim_a, fc_layers_neurons, loss_function_type):
+    # Fully connected layer (in tf contrib folder for now)
+    fc1 = tf.compat.v1.layers.dense(x, fc_layers_neurons, activation=tf.nn.tanh)
+    fc2 = tf.compat.v1.layers.dense(fc1, fc_layers_neurons, activation=tf.nn.tanh)
+
+    # Output layer, class prediction
+    y = tf.compat.v1.layers.dense(fc2, dim_a, activation=tf.nn.tanh, name='action_fnn')
+
+    y_ = tf.compat.v1.placeholder(tf.float32, [None, dim_a], name='label_fnn')
+
+    # define the loss function
+    if loss_function_type == 'cross_entropy':
+        loss = tf.reduce_mean(input_tensor=-tf.reduce_sum(input_tensor=y_ * tf.math.log(y), axis=[1]))
+    elif loss_function_type == 'mean_squared':
+        loss = 0.5 * tf.reduce_mean(input_tensor=tf.square(y - y_))
+    else:
+        loss = None
+        print('No existing loss function was selected, please try mean_squared or cross_entropy')
+        exit()
+
+    return y, loss

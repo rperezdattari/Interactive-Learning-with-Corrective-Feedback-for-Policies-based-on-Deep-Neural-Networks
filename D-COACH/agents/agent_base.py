@@ -48,11 +48,14 @@ class AgentBase:
         self._preprocess_observation(observation)
 
         action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
-
-        print(h, self.e, self.dim_a)
-        print(action)
+        hnn = self.fnn.eval(session=self.sess, feed_dict={'feedback/input_fnn:0': self.low_dim_observation})
+        # print('Human feedback',h)
+        # print('Neural feedback', hnn)
+        # print('Dot',np.dot(np.array(h).reshape(1, self.dim_a),hnn.T))
+        # print(h, self.e, self.dim_a)
+        # print(action)
         error = np.array(h * self.e).reshape(1, self.dim_a)
-        print(error)
+        # print(error)
         self.y_label = []
 
         for i in range(self.dim_a):
@@ -60,14 +63,17 @@ class AgentBase:
                                         self.action_lower_limits[i],
                                         self.action_upper_limits[i]))
 
-        print(self.y_label)
+        # print(self.y_label)
         self.y_label = np.array(self.y_label).reshape(1, self.dim_a)
-        print(self.y_label)
-        print('Done------------')
+        # print(self.y_label)
+        # print('Done------------')
 
+        # print('observation shape',self.low_dim_observation.shape)
         self.sess.run(self.train_step, feed_dict={'base/input:0': self.low_dim_observation,
                                                   'base/label:0': self.y_label})
-
+        # print('observation shape',self.low_dim_observation.shape)
+        self.sess.run(self.train_step_fnn, feed_dict={'feedback/input_fnn:0': self.low_dim_observation,
+                                                  'feedback/label_fnn:0': np.array(h, dtype='float').reshape(1, self.dim_a)})
     def batch_update(self, batch):
         state_batch = [np.array(pair[0]) for pair in batch]
         y_label_batch = [np.array(pair[1]) for pair in batch]

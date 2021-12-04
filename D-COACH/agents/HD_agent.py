@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from autoencoder import TrainAE, AE
-from models import fully_connected_layers
+from models import fully_connected_layers, fully_connected_layers_fnn
 from tools.functions import observation_to_gray, FastImagePlot
 from agents.agent_base import AgentBase
 import cv2
@@ -56,9 +56,42 @@ class Agent(AgentBase):
                                                   params['fc_layers_neurons'],
                                                   params['loss_function_type'])
 
+
         variables = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, 'base')
         self.train_step = tf.compat.v1.train.GradientDescentOptimizer(
             learning_rate=params['learning_rate']).minimize(loss, var_list=variables)
+
+        #####################################
+        with tf.compat.v1.variable_scope('feedback'):
+
+
+            self.AE = AE(ae_loc=params['ae_loc'])
+            ae_encoder = self.AE.latent_space
+            self.low_dim_input_shape = ae_encoder.get_shape()[1:]
+            # self.low_dim_input_shape = (64,64,1)
+            self.low_dim_input_fnn = tf.compat.v1.placeholder(tf.float32, [None, self.low_dim_input_shape[0],
+                                                             self.low_dim_input_shape[1],
+                                                             self.low_dim_input_shape[2]],
+                                                name='input_fnn')
+
+            self.low_dim_input_fnn = tf.identity(self.low_dim_input_fnn, name='low_dim_input_fnn')
+
+            # Build fully connected layers
+            self.fnn, loss_fnn = fully_connected_layers_fnn(slim.flatten(self.low_dim_input_fnn), dim_a,
+                                                  params['fc_layers_neurons'],
+                                                  params['loss_function_type'])
+
+        variables_fnn = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, 'feedback')
+        self.train_step_fnn = tf.compat.v1.train.GradientDescentOptimizer(
+            learning_rate=params['learning_rate']).minimize(loss_fnn, var_list=variables_fnn)
+        ####################################
+
+
+
+        variables = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, 'base')
+        self.train_step = tf.compat.v1.train.GradientDescentOptimizer(
+            learning_rate=params['learning_rate']).minimize(loss, var_list=variables)
+
 
         # Initialize tensorflow
         init = tf.compat.v1.global_variables_initializer()
