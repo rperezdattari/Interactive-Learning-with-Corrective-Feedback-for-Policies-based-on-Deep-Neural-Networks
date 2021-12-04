@@ -177,8 +177,10 @@ for i_episode in range(max_num_of_episodes):
                         batch = buffer.sample(batch_size=config_buffer.getint('sampling_size'))
                         agent.batch_update(batch)
             else:
-                #Brando added this.
-                agent.update_no_fb(observation)
+                if agent.get_neural_feedback_preferance(observation,action) > 1.2:
+                    print('Energy constraint!!')
+                    #Brando added this.
+                    agent.update_no_fb(observation)
 
 
 
