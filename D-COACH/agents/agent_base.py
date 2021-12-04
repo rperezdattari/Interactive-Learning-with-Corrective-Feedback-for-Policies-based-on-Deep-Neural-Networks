@@ -58,6 +58,7 @@ class AgentBase:
 
         action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
         hnn = self.fnn.eval(session=self.sess, feed_dict={'feedback/input_fnn:0': self.low_dim_observation})
+        error = np.array(h * self.e).reshape(1, self.dim_a)
         self.y_label = []
 
         for i in range(self.dim_a):
