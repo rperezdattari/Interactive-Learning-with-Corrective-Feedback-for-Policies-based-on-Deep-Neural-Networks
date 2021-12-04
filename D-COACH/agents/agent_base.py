@@ -44,18 +44,20 @@ class AgentBase:
     def _preprocess_observation(self, observation):
         pass
 
+    def update_no_fb(self, observation):
+        self._preprocess_observation(observation)
+        action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
+        self.y_label = 0.5*action
+        self.sess.run(self.train_step, feed_dict={'base/input:0': self.low_dim_observation,
+                                                  'base/label:0': self.y_label})
+
+
+
     def update(self, h, observation):
         self._preprocess_observation(observation)
 
         action = self.y.eval(session=self.sess, feed_dict={'base/input:0': self.low_dim_observation})
         hnn = self.fnn.eval(session=self.sess, feed_dict={'feedback/input_fnn:0': self.low_dim_observation})
-        # print('Human feedback',h)
-        # print('Neural feedback', hnn)
-        # print('Dot',np.dot(np.array(h).reshape(1, self.dim_a),hnn.T))
-        # print(h, self.e, self.dim_a)
-        # print(action)
-        error = np.array(h * self.e).reshape(1, self.dim_a)
-        # print(error)
         self.y_label = []
 
         for i in range(self.dim_a):
@@ -63,9 +65,8 @@ class AgentBase:
                                         self.action_lower_limits[i],
                                         self.action_upper_limits[i]))
 
-        # print(self.y_label)
         self.y_label = np.array(self.y_label).reshape(1, self.dim_a)
-        # print(self.y_label)
+
         # print('Done------------')
 
         # print('observation shape',self.low_dim_observation.shape)
